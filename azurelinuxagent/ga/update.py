@@ -142,12 +142,13 @@ def initialize_ids(user_id, user_gid):
     # Order is important as we would loose privilege to change GID the other way round
     os.setresgid(current_gid, user_gid, user_gid)
     os.setresuid(current_uid, user_id, user_id)
-    report_ids('after ID change')
 
     # Set the capabilities of the process
     prctl.cap_permitted.limit(prctl.CAP_SETFCAP, prctl.CAP_DAC_OVERRIDE)
     prctl.cap_effective.dac_override = True
     prctl.cap_effective.setfcap = True
+
+    report_ids('after ID change')
 
     # return (current_uid, user_id, user_id), (current_gid, user_gid, user_gid)
 
