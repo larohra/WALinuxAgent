@@ -115,8 +115,8 @@ def demote_process():
     _, _, suid = os.getresuid()
     _, _, sgid = os.getresgid()
 
-    os.seteuid(suid)
     os.setegid(sgid)
+    os.seteuid(suid)
     report_ids('finished demotion')
 
 
@@ -133,8 +133,9 @@ def initialize_ids(user_id, user_gid):
     current_uid = os.getuid()
     current_gid = os.getgid()
 
-    os.setresuid(current_uid, user_id, user_id)
+    # Order is important as we would loose privilege to change GID the other way round
     os.setresgid(current_gid, user_gid, user_gid)
+    os.setresuid(current_uid, user_id, user_id)
     report_ids('after ID change')
 
     # return (current_uid, user_id, user_id), (current_gid, user_gid, user_gid)
