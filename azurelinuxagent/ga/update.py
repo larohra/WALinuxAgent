@@ -32,6 +32,8 @@ import time
 import traceback
 import zipfile
 
+import prctl
+
 from datetime import datetime, timedelta
 
 import azurelinuxagent.common.conf as conf
@@ -129,6 +131,10 @@ def promote_process():
 
 # Set the IDs of the current process - RUID - ROOT, Effective+saved = user-id
 def initialize_ids(user_id, user_gid):
+    # Enable capabilities check
+    # https://stackoverflow.com/questions/31883010/unable-to-get-cap-chown-and-cap-dac-override-working-for-regular-user/31891700#31891700
+    prctl.securebits.keep_caps = True
+
     report_ids('before ID change')
     current_uid = os.getuid()
     current_gid = os.getgid()
@@ -137,6 +143,11 @@ def initialize_ids(user_id, user_gid):
     os.setresgid(current_gid, user_gid, user_gid)
     os.setresuid(current_uid, user_id, user_id)
     report_ids('after ID change')
+
+    # Set the capabilities of the process
+    prctl.cap_permitted.limit(prctl.CAP_SETFCAP, prctl.CAP_DAC_OVERRIDE)
+    prctl.cap_effective.dac_override = True
+    prctl.cap_effective.setfcap = True
 
     # return (current_uid, user_id, user_id), (current_gid, user_gid, user_gid)
 
