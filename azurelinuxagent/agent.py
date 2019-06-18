@@ -39,6 +39,15 @@ from azurelinuxagent.common.version import AGENT_NAME, AGENT_LONG_VERSION, \
 from azurelinuxagent.common.osutil import get_osutil
 from azurelinuxagent.common.utils import fileutil
 
+import prctl
+
+
+def update_capabilities():
+    prctl.get_caps()
+    prctl.cap_effective.dac_override = True
+    prctl.cap_effective.setfcap = True
+
+
 class Agent(object):
     def __init__(self, verbose, conf_file_path=None):
         """
@@ -132,6 +141,8 @@ class Agent(object):
         Run the update and extension handler
         """
         logger.set_prefix("ExtHandler")
+        # Upgrade the capabilities of the process, mark all permitted as effective
+        update_capabilities()
         from azurelinuxagent.ga.update import get_update_handler
         update_handler = get_update_handler()
         update_handler.run(debug)
