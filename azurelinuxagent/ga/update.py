@@ -225,6 +225,10 @@ class UpdateHandler(object):
                 stderr=sys.stderr,
                 env=os.environ)
 
+            ret = self.child_process.poll()
+            if ret is None or ret <= 0:
+                promote_process()
+
             logger.verbose(u"Agent {0} launched with command '{1}'", agent_name, agent_cmd)
 
             # If the most current agent is the installed agent and update is enabled,
