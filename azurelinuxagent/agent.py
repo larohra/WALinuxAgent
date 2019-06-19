@@ -46,6 +46,8 @@ def update_capabilities():
     prctl.get_caps()
     prctl.cap_effective.dac_override = True
     prctl.cap_effective.setfcap = True
+    prctl.cap_effective.chown = True
+    prctl.cap_effective.fowner = True
 
 
 class Agent(object):

@@ -119,7 +119,7 @@ class EnvHandler(object):
 
                 success = self.osutil.enable_firewall(
                                 dst_ip=protocol.endpoint,
-                                uid=os.getuid())
+                                uid=os.geteuid())
                 add_periodic(
                     logger.EVERY_HOUR,
                     AGENT_NAME,

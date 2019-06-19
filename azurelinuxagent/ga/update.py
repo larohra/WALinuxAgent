@@ -144,7 +144,7 @@ def initialize_ids(user_id, user_gid):
     os.setresuid(current_uid, user_id, user_id)
 
     # Set the capabilities of the process
-    prctl.cap_permitted.limit(prctl.CAP_SETFCAP, prctl.CAP_DAC_OVERRIDE)
+    # prctl.cap_permitted.limit(prctl.CAP_SETFCAP, prctl.CAP_DAC_OVERRIDE)
     prctl.cap_inheritable.dac_override = True
     prctl.cap_inheritable.setfcap = True
 
