@@ -60,15 +60,15 @@ IPTABLES_VERSION_PATTERN = re.compile("^[^\d\.]*([\d\.]+).*$")
 IPTABLES_VERSION = "iptables --version"
 IPTABLES_LOCKING_VERSION = FlexibleVersion('1.4.21')
 
-FIREWALL_ACCEPT = "iptables {0} -t security -{1} OUTPUT -d {2} -p tcp -m owner --uid-owner {3} -j ACCEPT"
+FIREWALL_ACCEPT = "/var/lib/waagent/iptables {0} -t security -{1} OUTPUT -d {2} -p tcp -m owner --uid-owner {3} -j ACCEPT"
 # Note:
 # -- Initially "flight" the change to ACCEPT packets and develop a metric baseline
 #    A subsequent release will convert the ACCEPT to DROP
 # FIREWALL_DROP = "iptables {0} -t security -{1} OUTPUT -d {2} -p tcp -m conntrack --ctstate INVALID,NEW -j ACCEPT"
-FIREWALL_DROP = "iptables {0} -t security -{1} OUTPUT -d {2} -p tcp -m conntrack --ctstate INVALID,NEW -j DROP"
-FIREWALL_LIST = "iptables {0} -t security -L -nxv"
-FIREWALL_PACKETS = "iptables {0} -t security -L OUTPUT --zero OUTPUT -nxv"
-FIREWALL_FLUSH = "iptables {0} -t security --flush"
+FIREWALL_DROP = "/var/lib/waagent/iptables {0} -t security -{1} OUTPUT -d {2} -p tcp -m conntrack --ctstate INVALID,NEW -j DROP"
+FIREWALL_LIST = "/var/lib/waagent/iptables {0} -t security -L -nxv"
+FIREWALL_PACKETS = "/var/lib/waagent/iptables {0} -t security -L OUTPUT --zero OUTPUT -nxv"
+FIREWALL_FLUSH = "/var/lib/waagent/iptables {0} -t security --flush"
 
 # Precisely delete the rules created by the agent.
 # this rule was used <= 2.2.25.  This rule helped to validate our change, and determine impact.
@@ -205,6 +205,7 @@ class DefaultOSUtil(object):
             return False
 
         try:
+            # promote_process()
             if dst_ip is None or uid is None:
                 msg = "Missing arguments to enable_firewall"
                 logger.warn(msg)
@@ -240,6 +241,14 @@ class DefaultOSUtil(object):
                 logger.warn(msg)
                 raise Exception(msg)
 
+            # Accept for root too
+            accept_rule = FIREWALL_ACCEPT.format(wait, "A", dst_ip, 0)
+            if shellutil.run(accept_rule) != 0:
+                msg = "Unable to add ACCEPT firewall rule '{0}'".format(
+                    accept_rule)
+                logger.warn(msg)
+                raise Exception(msg)
+
             logger.info("Successfully added Azure fabric firewall rules")
 
             rc, output = shellutil.run_get_output(FIREWALL_LIST.format(wait))
@@ -256,6 +265,9 @@ class DefaultOSUtil(object):
                         "no further attempts will be made: "
                         "{0}".format(ustr(e)))
             return False
+
+        # finally:
+            # demote_process()
 
     @staticmethod
     def _correct_instance_id(id):

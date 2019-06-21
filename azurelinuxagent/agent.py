@@ -37,17 +37,13 @@ from azurelinuxagent.common.version import AGENT_NAME, AGENT_LONG_VERSION, \
                                      PY_VERSION_MAJOR, PY_VERSION_MINOR, \
                                      PY_VERSION_MICRO, GOAL_STATE_AGENT_VERSION
 from azurelinuxagent.common.osutil import get_osutil
-from azurelinuxagent.common.utils import fileutil
+from azurelinuxagent.common.utils import fileutil, processutil
 
 import prctl
 
 
-def update_capabilities():
-    prctl.get_caps()
-    prctl.cap_effective.dac_override = True
-    prctl.cap_effective.setfcap = True
-    prctl.cap_effective.chown = True
-    prctl.cap_effective.fowner = True
+def report_ids(msg=""):
+    logger.info('(ruid, euid, suid) = %s; (rgid, egid, sgid) = %s; %s' % (os.getresuid(), os.getresgid(), msg))
 
 
 class Agent(object):
@@ -144,7 +140,7 @@ class Agent(object):
         """
         logger.set_prefix("ExtHandler")
         # Upgrade the capabilities of the process, mark all permitted as effective
-        update_capabilities()
+        processutil.update_agent_capabilities()
         from azurelinuxagent.ga.update import get_update_handler
         update_handler = get_update_handler()
         update_handler.run(debug)

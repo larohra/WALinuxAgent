@@ -112,49 +112,10 @@ def get_python_cmd():
 #         self.r_uid, self.e_uid, self.s_uid = uids
 #         self.r_gid, self.e_gid, self.s_gid = gids
 
-# Demote - set effective Id as the saved Id
-def demote_process():
-    _, _, suid = os.getresuid()
-    _, _, sgid = os.getresgid()
 
-    os.setegid(sgid)
-    os.seteuid(suid)
-    report_ids('finished demotion')
-
-
-# Promote - set effective Id as the Real Id
-def promote_process():
-    os.seteuid(os.getuid())
-    os.setegid(os.getgid())
-    report_ids('finished promotion')
-
-
-# Set the IDs of the current process - RUID - ROOT, Effective+saved = user-id
-def initialize_ids(user_id, user_gid):
-    # Enable capabilities check
-    # https://stackoverflow.com/questions/31883010/unable-to-get-cap-chown-and-cap-dac-override-working-for-regular-user/31891700#31891700
-    prctl.securebits.keep_caps = True
-
-    report_ids('before ID change')
-    current_uid = os.getuid()
-    current_gid = os.getgid()
-
-    # Order is important as we would loose privilege to change GID the other way round
-    os.setresgid(current_gid, user_gid, user_gid)
-    os.setresuid(current_uid, user_id, user_id)
-
-    # Set the capabilities of the process
-    # prctl.cap_permitted.limit(prctl.CAP_SETFCAP, prctl.CAP_DAC_OVERRIDE)
-    prctl.cap_inheritable.dac_override = True
-    prctl.cap_inheritable.setfcap = True
-
-    report_ids('after ID change')
-
-    # return (current_uid, user_id, user_id), (current_gid, user_gid, user_gid)
-
-
-def report_ids(msg):
-    logger.info('(ruid, euid, suid) = %s; (rgid, egid, sgid) = %s; %s' % (os.getresuid(), os.getresgid(), msg))
+def limit_capabilities():
+    pass
+    # prctl.cap_permitted.limit()
 
 
 class UpdateHandler(object):
@@ -219,15 +180,15 @@ class UpdateHandler(object):
 
             self.child_process = subprocess.Popen(
                 cmds,
-                preexec_fn=initialize_ids(1000, 1000),
+                preexec_fn=limit_capabilities,
                 cwd=agent_dir,
                 stdout=sys.stdout,
                 stderr=sys.stderr,
                 env=os.environ)
 
-            ret = self.child_process.poll()
-            if ret is None or ret <= 0:
-                promote_process()
+            # ret = self.child_process.poll()
+            # if ret is None or ret <= 0:
+            #     promote_process()
 
             logger.verbose(u"Agent {0} launched with command '{1}'", agent_name, agent_cmd)
 
@@ -328,6 +289,9 @@ class UpdateHandler(object):
             from azurelinuxagent.ga.env import get_env_handler
             env_thread = get_env_handler()
             env_thread.run()
+
+            # Downgrade here
+            # update_agent_capabilities()
 
             from azurelinuxagent.ga.exthandlers import get_exthandlers_handler, migrate_handler_state
             exthandlers_handler = get_exthandlers_handler()

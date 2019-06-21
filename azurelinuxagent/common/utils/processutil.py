@@ -17,6 +17,7 @@
 # Requires Python 2.6+ and Openssl 1.0+
 #
 import os
+import prctl
 import signal
 from errno import ESRCH
 
@@ -67,3 +68,94 @@ def format_stdout_stderr(stdout, stderr, max_len=TELEMETRY_MESSAGE_MAX_LEN):
     else:
         return to_s(stdout, -1*max_len_each, stderr, -1*max_len_each)
 
+
+# Demote - set effective Id as the saved Id
+def promote_process():
+    _, _, suid = os.getresuid()
+    _, _, sgid = os.getresgid()
+
+    os.setegid(sgid)
+    os.seteuid(suid)
+
+
+# Promote - set effective Id as the Real Id
+def demote_process():
+    os.seteuid(os.getuid())
+    os.setegid(os.getgid())
+
+
+# Set the IDs of the current process - RUID - ROOT, Effective+saved = user-id
+def initialize_ids(user_id=1000, user_gid=1000):
+    # Enable capabilities check
+    # https://stackoverflow.com/questions/31883010/unable-to-get-cap-chown-and-cap-dac-override-working-for-regular-user/31891700#31891700
+    prctl.securebits.keep_caps = True
+
+    current_uid = os.getuid()
+    current_gid = os.getgid()
+
+    os.setgroups([user_gid])
+    # Order is important as we would loose privilege to change GID the other way round
+    os.setresgid(user_gid, user_gid, current_gid)
+    os.setresuid(user_id, user_id, current_uid)
+
+    # Set the capabilities of the process
+    # prctl.cap_permitted.limit(prctl.CAP_SETFCAP, prctl.CAP_DAC_OVERRIDE)
+    # prctl.cap_inheritable.dac_override = True
+    # prctl.cap_inheritable.setfcap = True
+
+    # return (current_uid, user_id, user_id), (current_gid, user_gid, user_gid)
+
+
+def update_agent_capabilities():
+    initialize_ids(1000, 1000)
+    # report_ids("After initilialization")
+
+    # subprocess.Popen()
+
+    prctl.cap_effective.dac_override = True
+    prctl.cap_effective.dac_read_search = True
+    prctl.cap_effective.setfcap = True
+    prctl.cap_effective.setpcap = True
+    prctl.cap_effective.chown = True
+    prctl.cap_effective.fowner = True
+    prctl.cap_effective.net_admin = True
+    prctl.cap_effective.net_raw = True
+    # prctl.cap_effective.net_bind_service = True
+    # prctl.cap_effective.net_broadcast = True
+
+    # prctl.cap_effective.audit_control = True
+    # prctl.cap_effective.audit_write = True
+    # prctl.cap_effective.chown = True
+    # prctl.cap_effective.dac_override = True
+    # prctl.cap_effective.dac_read_search = True
+    # prctl.cap_effective.fowner = True
+    # prctl.cap_effective.fsetid = True
+    # prctl.cap_effective.ipc_lock = True
+    # prctl.cap_effective.ipc_owner = True
+    # prctl.cap_effective.kill = True
+    # prctl.cap_effective.lease = True
+    # prctl.cap_effective.linux_immutable = True
+    # prctl.cap_effective.mac_admin = True
+    # prctl.cap_effective.mac_override = True
+    # prctl.cap_effective.mknod = True
+    # prctl.cap_effective.net_admin = True
+    # prctl.cap_effective.net_bind_service = True
+    # prctl.cap_effective.net_broadcast = True
+    # prctl.cap_effective.net_raw = True
+    # prctl.cap_effective.setfcap = True
+    # prctl.cap_effective.setgid = True
+    # prctl.cap_effective.setpcap = True
+    # prctl.cap_effective.setuid = True
+    # prctl.cap_effective.sys_admin = True
+    # prctl.cap_effective.sys_boot = True
+    # prctl.cap_effective.sys_chroot = True
+    # prctl.cap_effective.sys_module = True
+    # prctl.cap_effective.sys_nice = True
+    # prctl.cap_effective.sys_pacct = True
+    # prctl.cap_effective.sys_ptrace = True
+    # prctl.cap_effective.sys_rawio = True
+    # prctl.cap_effective.sys_resource = True
+    # prctl.cap_effective.sys_time = True
+    # prctl.cap_effective.sys_tty_config = True
+    # prctl.cap_effective.syslog = True
+    # prctl.cap_effective.wake_alarm = True
