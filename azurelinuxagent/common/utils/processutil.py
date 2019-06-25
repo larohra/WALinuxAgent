@@ -71,17 +71,24 @@ def format_stdout_stderr(stdout, stderr, max_len=TELEMETRY_MESSAGE_MAX_LEN):
 
 # Demote - set effective Id as the saved Id
 def promote_process():
-    _, _, suid = os.getresuid()
-    _, _, sgid = os.getresgid()
+    _, orig_suid, suid = os.getresuid()
+    _, orig_sgid, sgid = os.getresgid()
 
-    os.setegid(sgid)
-    os.seteuid(suid)
+    # os.setegid(sgid)
+    # os.seteuid(suid)
+    os.setresgid(sgid, sgid, orig_sgid)
+    os.setresuid(suid, suid, orig_suid)
 
 
 # Promote - set effective Id as the Real Id
 def demote_process():
-    os.seteuid(os.getuid())
-    os.setegid(os.getgid())
+    # os.seteuid(os.getuid())
+    # os.setegid(os.getgid())
+    _, suid, orig_suid = os.getresuid()
+    _, sgid, orig_sgid = os.getresgid()
+
+    os.setresgid(orig_sgid, orig_sgid, sgid)
+    os.setresuid(orig_suid, orig_suid, suid)
 
 
 # Set the IDs of the current process - RUID - ROOT, Effective+saved = user-id
@@ -106,15 +113,27 @@ def initialize_ids(user_id=1000, user_gid=1000):
     # return (current_uid, user_id, user_id), (current_gid, user_gid, user_gid)
 
 
+def report_ids(logger, msg=""):
+    logger.info('(ruid, euid, suid) = %s; (rgid, egid, sgid) = %s; %s' % (os.getresuid(), os.getresgid(), msg))
+
+
+def get_ext_handler_capabilities():
+    capabilities = ['cap_dac_override', 'cap_setgid', 'cap_setuid', 'cap_setpcap', 'cap_chown']
+    return capabilities
+
+
 def update_agent_capabilities():
+    pass
     initialize_ids(1000, 1000)
     # report_ids("After initilialization")
 
     # subprocess.Popen()
 
+    prctl.cap_effective.setuid = True
+    prctl.cap_effective.setgid = True
     prctl.cap_effective.dac_override = True
-    prctl.cap_effective.dac_read_search = True
-    prctl.cap_effective.setfcap = True
+    # prctl.cap_effective.dac_read_search = True
+    # prctl.cap_effective.setfcap = True
     prctl.cap_effective.setpcap = True
     prctl.cap_effective.chown = True
     prctl.cap_effective.fowner = True

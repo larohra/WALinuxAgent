@@ -42,10 +42,6 @@ from azurelinuxagent.common.utils import fileutil, processutil
 import prctl
 
 
-def report_ids(msg=""):
-    logger.info('(ruid, euid, suid) = %s; (rgid, egid, sgid) = %s; %s' % (os.getresuid(), os.getresgid(), msg))
-
-
 class Agent(object):
     def __init__(self, verbose, conf_file_path=None):
         """

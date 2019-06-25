@@ -54,6 +54,7 @@ from azurelinuxagent.common.protocol import get_protocol_util
 from azurelinuxagent.common.protocol.hostplugin import HostPluginProtocol
 from azurelinuxagent.common.protocol.wire import WireProtocol
 from azurelinuxagent.common.utils.flexible_version import FlexibleVersion
+from azurelinuxagent.common.utils.processutil import get_ext_handler_capabilities
 from azurelinuxagent.common.version import AGENT_NAME, AGENT_VERSION, AGENT_LONG_VERSION, \
     AGENT_DIR_GLOB, AGENT_PKG_GLOB, \
     AGENT_PATTERN, AGENT_NAME_PATTERN, AGENT_DIR_PATTERN, \
@@ -169,12 +170,15 @@ class UpdateHandler(object):
             agent_cmd = "{0} {1}".format(agent_cmd, child_args)
 
         try:
-
             # Launch the correct Python version for python-based agents
             cmds = textutil.safe_shlex_split(agent_cmd)
             if cmds[0].lower() == "python":
                 cmds[0] = get_python_cmd()
                 agent_cmd = " ".join(cmds)
+
+            capsh_cmd = 'capsh --keep=1 --user=%s --caps=%s+eip --addamb=%s -- -c "%s"' % \
+                        ('larohra', ','.join(get_ext_handler_capabilities()), ','.join(get_ext_handler_capabilities()), agent_cmd)
+            cmds = textutil.safe_shlex_split(capsh_cmd)
 
             self._evaluate_agent_health(latest_agent)
 

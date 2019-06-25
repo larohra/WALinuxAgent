@@ -1447,6 +1447,8 @@ class Certificates(object):
         self.parse(xml_text)
 
     def parse(self, xml_text):
+        from azurelinuxagent.common.utils.processutil import promote_process, demote_process, report_ids
+
         """
         Parse multiple certificates into seperate files.
         """
@@ -1478,8 +1480,15 @@ class Certificates(object):
                                        TRANSPORT_CERT_FILE_NAME)
         pem_file = os.path.join(conf.get_lib_dir(), PEM_FILE_NAME)
         # decrypt certificates
-        cryptutil.decrypt_p7m(p7m_file, trans_prv_file, trans_cert_file,
-                              pem_file)
+        try:
+            # promote_process()
+            report_ids(logger, "Promoting for Certificates refresh")
+            cryptutil.decrypt_p7m(p7m_file, trans_prv_file, trans_cert_file,
+                                pem_file)
+        finally:
+            pass
+            # demote_process()
+            # report_ids(logger, "Demoting after Certificates refresh")
 
         # The parsing process use public key to match prv and crt.
         buf = []

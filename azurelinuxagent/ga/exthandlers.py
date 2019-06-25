@@ -1113,6 +1113,8 @@ class ExtHandlerInstance(object):
         return last_update <= 600
 
     def launch_command(self, cmd, timeout=300, extension_error_code=ExtensionErrorCodes.PluginProcessingError, env=None):
+        from azurelinuxagent.common.utils.processutil import promote_process, demote_process, report_ids
+
         begin_utc = datetime.datetime.utcnow()
         self.logger.verbose("Launch command: [{0}]", cmd)
 
@@ -1136,6 +1138,8 @@ class ExtHandlerInstance(object):
                         """
                         os.setsid()
                         CGroups.add_to_extension_cgroup(self.ext_handler.name, os.getpid())
+                        promote_process()
+                        report_ids(logger, "After promotion")
 
                     process = subprocess.Popen(full_path,
                                                shell=True,
@@ -1153,6 +1157,10 @@ class ExtHandlerInstance(object):
                     CGroupsTelemetry.track_extension(self.ext_handler.name, cg)
                 except Exception as e:
                     self.logger.warn("Unable to setup cgroup {0}: {1}".format(self.ext_handler.name, e))
+
+                if process.poll() is None or process.poll() <= 0:
+                    demote_process()
+                    report_ids(logger, "after demotion")
 
                 msg = ExtHandlerInstance._capture_process_output(process, stdout, stderr, cmd, timeout, extension_error_code)
 

@@ -44,6 +44,7 @@ from azurelinuxagent.common.future import ustr
 from azurelinuxagent.common.utils.cryptutil import CryptUtil
 from azurelinuxagent.common.utils.flexible_version import FlexibleVersion
 from azurelinuxagent.common.utils.networkutil import RouteEntry, NetworkInterfaceCard
+from azurelinuxagent.common.utils.processutil import promote_process, demote_process
 
 from pwd import getpwall
 
@@ -235,17 +236,17 @@ class DefaultOSUtil(object):
                 logger.warn(msg)
                 raise Exception(msg)
 
-            if shellutil.run(drop_rule) != 0:
-                msg = "Unable to add DROP firewall rule '{0}'".format(
-                    drop_rule)
-                logger.warn(msg)
-                raise Exception(msg)
-
             # Accept for root too
             accept_rule = FIREWALL_ACCEPT.format(wait, "A", dst_ip, 0)
             if shellutil.run(accept_rule) != 0:
                 msg = "Unable to add ACCEPT firewall rule '{0}'".format(
                     accept_rule)
+                logger.warn(msg)
+                raise Exception(msg)
+
+            if shellutil.run(drop_rule) != 0:
+                msg = "Unable to add DROP firewall rule '{0}'".format(
+                    drop_rule)
                 logger.warn(msg)
                 raise Exception(msg)
 

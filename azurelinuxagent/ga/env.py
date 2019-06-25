@@ -101,6 +101,8 @@ class EnvHandler(object):
         If dhcp client process re-start has occurred, reset routes.
         Purge unnecessary files from disk cache.
         """
+        # from azurelinuxagent.common.utils.processutil import promote_process, demote_process
+        # promote_process()
         protocol = self.protocol_util.get_protocol()
         reset_firewall_fules = False
         while not self.stopped:
@@ -140,6 +142,7 @@ class EnvHandler(object):
             self.archive_history()
 
             time.sleep(5)
+        # demote_process()
 
     def handle_hostname_update(self):
         curr_hostname = socket.gethostname()

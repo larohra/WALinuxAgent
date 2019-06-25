@@ -34,17 +34,26 @@ import azurelinuxagent.common.utils.textutil as textutil
 DECRYPT_SECRET_CMD = "{0} cms -decrypt -inform DER -inkey {1} -in /dev/stdin"
 
 class CryptUtil(object):
+
     def __init__(self, openssl_cmd):
         self.openssl_cmd = openssl_cmd
 
     def gen_transport_cert(self, prv_file, crt_file):
+        from azurelinuxagent.common.utils.processutil import promote_process, demote_process, report_ids
         """
         Create ssl certificate for https communication with endpoint server.
         """
-        cmd = ("{0} req -x509 -nodes -subj /CN=LinuxTransport -days 730 "
+        cert_cmd = ("{0} req -x509 -nodes -subj /CN=LinuxTransport -days 730 "
                "-newkey rsa:2048 -keyout {1} "
                "-out {2}").format(self.openssl_cmd, prv_file, crt_file)
+
+        cmd = '/sbin/capsh --keep=1 --user=larohra --addamb=cap_dac_override -- -c "%s"' % cert_cmd
+
+        # promote_process()
+        # report_ids(logger, "Reporting after Promotion for trans               port cert")
         rc = shellutil.run(cmd)
+        # demote_process()
+        # report_ids(logger, "Reporting after demotion for transport cert")
         if rc != 0:
             logger.error("Failed to create {0} and {1} certificates".format(
                 prv_file, crt_file))
