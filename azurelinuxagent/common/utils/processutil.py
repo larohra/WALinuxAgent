@@ -79,6 +79,8 @@ def promote_process():
     os.setresgid(sgid, sgid, orig_sgid)
     os.setresuid(suid, suid, orig_suid)
 
+    report_ids("After process promotion")
+
 
 # Promote - set effective Id as the Real Id
 def demote_process():
@@ -89,6 +91,7 @@ def demote_process():
 
     os.setresgid(orig_sgid, orig_sgid, sgid)
     os.setresuid(orig_suid, orig_suid, suid)
+    report_ids("after process demotion")
 
 
 # Set the IDs of the current process - RUID - ROOT, Effective+saved = user-id
@@ -113,7 +116,8 @@ def initialize_ids(user_id=1000, user_gid=1000):
     # return (current_uid, user_id, user_id), (current_gid, user_gid, user_gid)
 
 
-def report_ids(logger, msg=""):
+def report_ids(msg=""):
+    import azurelinuxagent.common.logger as logger
     logger.info('(ruid, euid, suid) = %s; (rgid, egid, sgid) = %s; %s' % (os.getresuid(), os.getresgid(), msg))
 
 

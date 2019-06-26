@@ -1482,13 +1482,11 @@ class Certificates(object):
         # decrypt certificates
         try:
             # promote_process()
-            report_ids(logger, "Promoting for Certificates refresh")
             cryptutil.decrypt_p7m(p7m_file, trans_prv_file, trans_cert_file,
                                 pem_file)
         finally:
             pass
             # demote_process()
-            # report_ids(logger, "Demoting after Certificates refresh")
 
         # The parsing process use public key to match prv and crt.
         buf = []
