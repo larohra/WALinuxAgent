@@ -1138,7 +1138,7 @@ class ExtHandlerInstance(object):
                         """
                         os.setsid()
                         CGroups.add_to_extension_cgroup(self.ext_handler.name, os.getpid())
-                        # promote_process()
+                        promote_process()
 
                     process = subprocess.Popen(full_path,
                                                shell=True,
@@ -1157,8 +1157,8 @@ class ExtHandlerInstance(object):
                 except Exception as e:
                     self.logger.warn("Unable to setup cgroup {0}: {1}".format(self.ext_handler.name, e))
 
-                # if process.poll() is None or process.poll() <= 0:
-                #     demote_process()
+                if process.poll() is None or process.poll() <= 0:
+                    demote_process()
 
                 msg = ExtHandlerInstance._capture_process_output(process, stdout, stderr, cmd, timeout, extension_error_code)
 

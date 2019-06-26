@@ -122,12 +122,18 @@ def report_ids(msg=""):
 
 
 def get_ext_handler_capabilities():
-    capabilities = ['cap_dac_override', 'cap_setgid', 'cap_setuid', 'cap_setpcap', 'cap_chown']
+    capabilities = ['cap_dac_override', 'cap_setgid', 'cap_setuid', 'cap_setpcap', 'cap_chown', 'cap_fowner',
+                    'cap_net_admin', 'cap_net_raw']
     return capabilities
 
 
 def update_agent_capabilities():
-    pass
+
+    import os
+
+    os.system("capsh --print")
+    return
+
     initialize_ids(1000, 1000)
     # report_ids("After initilialization")
 

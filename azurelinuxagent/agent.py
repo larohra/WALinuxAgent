@@ -136,7 +136,7 @@ class Agent(object):
         """
         logger.set_prefix("ExtHandler")
         # Upgrade the capabilities of the process, mark all permitted as effective
-        # processutil.update_agent_capabilities()
+        processutil.update_agent_capabilities()
         from azurelinuxagent.ga.update import get_update_handler
         update_handler = get_update_handler()
         update_handler.run(debug)
