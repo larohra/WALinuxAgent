@@ -17,7 +17,6 @@
 # Requires Python 2.6+ and Openssl 1.0+
 #
 import os
-import prctl
 import azurelinuxagent.common.logger as logger
 
 from azurelinuxagent.common.exception import ExtensionError
@@ -106,7 +105,6 @@ def demote_process():
 def initialize_ids(user_id=1000, user_gid=1000):
     # Enable capabilities check
     # https://stackoverflow.com/questions/31883010/unable-to-get-cap-chown-and-cap-dac-override-working-for-regular-user/31891700#31891700
-    prctl.securebits.keep_caps = True
 
     current_uid = os.getuid()
     current_gid = os.getgid()
@@ -143,12 +141,17 @@ def print_current_capabilities():
     rc, out = shellutil.run_get_output(cmd)
     logger.info("RC: %s; Output: %s" % (rc, out))
 
-def update_agent_capabilities():
 
-    print_current_capabilities()
+def update_agent_capabilities():
+    from azurelinuxagent.common.event import add_event, WALAEventOperation
 
     uid = os.getuid()
     gid = os.getgid()
+
+    add_event("WALinuxAgent",
+              op=WALAEventOperation.AgentEnabled,
+              is_success=True,
+              message="ExtHandler Running as - UID: %s and GID: %s" % (uid, gid))
 
     os.setresgid(gid, gid, 0)
     os.setresuid(uid, uid, 0)
@@ -156,21 +159,18 @@ def update_agent_capabilities():
     report_ids("Status after agent starts")
     return
 
-    initialize_ids(1000, 1000)
-    # report_ids("After initilialization")
+    # initialize_ids(1000, 1000)
 
-    # subprocess.Popen()
-
-    prctl.cap_effective.setuid = True
-    prctl.cap_effective.setgid = True
-    prctl.cap_effective.dac_override = True
-    # prctl.cap_effective.dac_read_search = True
-    # prctl.cap_effective.setfcap = True
-    prctl.cap_effective.setpcap = True
-    prctl.cap_effective.chown = True
-    prctl.cap_effective.fowner = True
-    prctl.cap_effective.net_admin = True
-    prctl.cap_effective.net_raw = True
+    # prctl.cap_effective.setuid = True
+    # prctl.cap_effective.setgid = True
+    # prctl.cap_effective.dac_override = True
+    # # prctl.cap_effective.dac_read_search = True
+    # # prctl.cap_effective.setfcap = True
+    # prctl.cap_effective.setpcap = True
+    # prctl.cap_effective.chown = True
+    # prctl.cap_effective.fowner = True
+    # prctl.cap_effective.net_admin = True
+    # prctl.cap_effective.net_raw = True
     # prctl.cap_effective.net_bind_service = True
     # prctl.cap_effective.net_broadcast = True
 

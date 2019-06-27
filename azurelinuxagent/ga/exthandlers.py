@@ -1113,7 +1113,7 @@ class ExtHandlerInstance(object):
         return last_update <= 600
 
     def launch_command(self, cmd, timeout=300, extension_error_code=ExtensionErrorCodes.PluginProcessingError, env=None):
-        from azurelinuxagent.common.utils.processutil import promote_process, demote_process, report_ids
+        from azurelinuxagent.common.utils.processutil import promote_process, demote_process
 
         begin_utc = datetime.datetime.utcnow()
         self.logger.verbose("Launch command: [{0}]", cmd)

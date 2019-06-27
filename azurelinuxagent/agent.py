@@ -39,8 +39,6 @@ from azurelinuxagent.common.version import AGENT_NAME, AGENT_LONG_VERSION, \
 from azurelinuxagent.common.osutil import get_osutil
 from azurelinuxagent.common.utils import fileutil, processutil
 
-import prctl
-
 
 class Agent(object):
     def __init__(self, verbose, conf_file_path=None):

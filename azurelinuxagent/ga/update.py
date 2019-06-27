@@ -32,8 +32,6 @@ import time
 import traceback
 import zipfile
 
-import prctl
-
 from datetime import datetime, timedelta
 
 import azurelinuxagent.common.conf as conf
