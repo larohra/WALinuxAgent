@@ -47,13 +47,9 @@ class CryptUtil(object):
                "-newkey rsa:2048 -keyout {1} "
                "-out {2}").format(self.openssl_cmd, prv_file, crt_file)
 
-        cmd = '/sbin/capsh --keep=1 --user=larohra --addamb=cap_dac_override -- -c "%s"' % cert_cmd
+        cmd = '/sbin/capsh --keep=1 --caps=cap_dac_override+eip --addamb=cap_dac_override -- -c "%s"' % cert_cmd
 
-        # promote_process()
-        # report_ids(logger, "Reporting after Promotion for trans               port cert")
         rc = shellutil.run(cmd)
-        # demote_process()
-        # report_ids(logger, "Reporting after demotion for transport cert")
         if rc != 0:
             logger.error("Failed to create {0} and {1} certificates".format(
                 prv_file, crt_file))
