@@ -208,6 +208,7 @@ class ExtHandlersHandler(object):
         self.log_report = False
         self.log_etag = True
         self.log_process = False
+        self.as_root = True
 
         self.report_status_error_state = ErrorState()
         self.get_artifact_error_state = ErrorState(min_timedelta=ERROR_STATE_DELTA_INSTALL)
@@ -1138,7 +1139,8 @@ class ExtHandlerInstance(object):
                         """
                         os.setsid()
                         CGroups.add_to_extension_cgroup(self.ext_handler.name, os.getpid())
-                        promote_process()
+                        if self.ext_handler.as_root:
+                            promote_process()
 
                     process = subprocess.Popen(full_path,
                                                shell=True,
@@ -1157,7 +1159,8 @@ class ExtHandlerInstance(object):
                 except Exception as e:
                     self.logger.warn("Unable to setup cgroup {0}: {1}".format(self.ext_handler.name, e))
 
-                if process.poll() is None or process.poll() <= 0:
+                rc = process.poll()
+                if self.ext_handler.as_root and (rc is None or rc <= 0):
                     demote_process()
 
                 msg = ExtHandlerInstance._capture_process_output(process, stdout, stderr, cmd, timeout, extension_error_code)

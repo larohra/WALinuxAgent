@@ -174,6 +174,7 @@ class UpdateHandler(object):
                 cmds[0] = get_python_cmd()
                 agent_cmd = " ".join(cmds)
 
+            # Start the ext-handler as non-root with a limited set of capabilities
             capsh_cmd = 'capsh --keep=1 --user=%s --caps=%s+eip --addamb=%s -- -c "%s"' % \
                         ('larohra', ','.join(get_ext_handler_capabilities()), ','.join(get_ext_handler_capabilities()), agent_cmd)
             cmds = textutil.safe_shlex_split(capsh_cmd)
@@ -274,7 +275,7 @@ class UpdateHandler(object):
         self.child_process = None
         return
 
-    def run(self, debug=False):
+    def run(self, debug=False, as_root=True):
         """
         This is the main loop which watches for agent and extension updates.
         """
@@ -341,6 +342,7 @@ class UpdateHandler(object):
                 utc_start = datetime.utcnow()
 
                 last_etag = exthandlers_handler.last_etag
+                exthandlers_handler.as_root = as_root
                 exthandlers_handler.run()
 
                 remote_access_handler.run()

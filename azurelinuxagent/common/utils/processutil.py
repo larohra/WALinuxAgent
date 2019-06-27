@@ -67,64 +67,45 @@ def format_stdout_stderr(stdout, stderr, max_len=TELEMETRY_MESSAGE_MAX_LEN):
         return to_s(stdout, -1*max_len_each, stderr, -1*max_len_each)
 
 
-# Demote - set effective Id as the saved Id
+def update_agent_capabilities():
+    from azurelinuxagent.common.event import add_event, WALAEventOperation
+
+    uid = os.getuid()
+    gid = os.getgid()
+
+    add_event("WALinuxAgent",
+              op=WALAEventOperation.AgentEnabled,
+              is_success=True,
+              message="ExtHandler Running as - UID: %s and GID: %s" % (uid, gid))
+
+    report_ids("Status after agent starts")
+    return
+
+
+# Promote - set real and effective Id as root
 def promote_process():
-    # _, orig_suid, suid = os.getresuid()
-    # _, orig_sgid, sgid = os.getresgid()
 
-    # os.setegid(sgid)
-    # os.seteuid(suid)
-
-    nr_uid, nr_gid = 1000, 1000
     r_uid, r_gid = 0, 0
 
-    os.setresgid(r_gid, r_gid, nr_gid)
-    os.setresuid(r_uid, r_uid, nr_uid)
+    os.setregid(r_gid, r_gid)
+    os.setreuid(r_uid, r_uid)
 
     report_ids("After process promotion")
 
 
-# Promote - set effective Id as the Real Id
+# Demote - set real and effective Id as the saved user
 def demote_process():
-    # os.seteuid(os.getuid())
-    # os.setegid(os.getgid())
-    # _, suid, orig_suid = os.getresuid()
-    # _, sgid, orig_sgid = os.getresgid()
-    #
-    # logger.warn("ORIG SUID: %s || NEW SUID: %s" % (orig_suid, suid))
 
     nr_uid, nr_gid = 1000, 1000
-    r_uid, r_gid = 0, 0
 
-    os.setresgid(nr_gid, nr_gid, r_gid)
-    os.setresuid(nr_uid, nr_uid, r_uid)
+    os.setregid(nr_gid, nr_gid)
+    os.setreuid(nr_uid, nr_uid)
     report_ids("after process demotion")
 
 
-# Set the IDs of the current process - RUID - ROOT, Effective+saved = user-id
-def initialize_ids(user_id=1000, user_gid=1000):
-    # Enable capabilities check
-    # https://stackoverflow.com/questions/31883010/unable-to-get-cap-chown-and-cap-dac-override-working-for-regular-user/31891700#31891700
-
-    current_uid = os.getuid()
-    current_gid = os.getgid()
-
-    os.setgroups([user_gid])
-    # Order is important as we would loose privilege to change GID the other way round
-    os.setresgid(user_gid, user_gid, current_gid)
-    os.setresuid(user_id, user_id, current_uid)
-
-    # Set the capabilities of the process
-    # prctl.cap_permitted.limit(prctl.CAP_SETFCAP, prctl.CAP_DAC_OVERRIDE)
-    # prctl.cap_inheritable.dac_override = True
-    # prctl.cap_inheritable.setfcap = True
-
-    # return (current_uid, user_id, user_id), (current_gid, user_gid, user_gid)
-
-
-def report_ids(msg=""):
-    print_current_capabilities()
-    logger.info('(ruid, euid, suid) = %s; (rgid, egid, sgid) = %s; %s' % (os.getresuid(), os.getresgid(), msg))
+def report_ids(msg="Current IDs"):
+    # print_current_capabilities()
+    logger.info('%s - (ruid, euid, suid) = %s; (rgid, egid, sgid) = %s' % (msg, os.getresuid(), os.getresgid()))
 
 
 def get_ext_handler_capabilities():
@@ -142,23 +123,18 @@ def print_current_capabilities():
     logger.info("RC: %s; Output: %s" % (rc, out))
 
 
-def update_agent_capabilities():
-    from azurelinuxagent.common.event import add_event, WALAEventOperation
+# Set the IDs of the current process - RUID - ROOT, Effective+saved = user-id
+def initialize_ids(user_id=1000, user_gid=1000):
+    # Enable capabilities check
+    # https://stackoverflow.com/questions/31883010/unable-to-get-cap-chown-and-cap-dac-override-working-for-regular-user/31891700#31891700
 
-    uid = os.getuid()
-    gid = os.getgid()
+    current_uid = os.getuid()
+    current_gid = os.getgid()
 
-    add_event("WALinuxAgent",
-              op=WALAEventOperation.AgentEnabled,
-              is_success=True,
-              message="ExtHandler Running as - UID: %s and GID: %s" % (uid, gid))
-
-    os.setresgid(gid, gid, 0)
-    os.setresuid(uid, uid, 0)
-
-    report_ids("Status after agent starts")
-    return
-
+    os.setgroups([user_gid])
+    # Order is important as we would loose privilege to change GID the other way round
+    os.setresgid(user_gid, user_gid, current_gid)
+    os.setresuid(user_id, user_id, current_uid)
     # initialize_ids(1000, 1000)
 
     # prctl.cap_effective.setuid = True

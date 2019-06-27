@@ -128,7 +128,7 @@ class Agent(object):
         print("Start {0} service".format(AGENT_NAME))
         self.osutil.start_agent_service()
 
-    def run_exthandlers(self, debug=False):
+    def run_exthandlers(self, debug=False, as_root=True):
         """
         Run the update and extension handler
         """
@@ -137,7 +137,7 @@ class Agent(object):
         processutil.update_agent_capabilities()
         from azurelinuxagent.ga.update import get_update_handler
         update_handler = get_update_handler()
-        update_handler.run(debug)
+        update_handler.run(debug, as_root)
 
     def show_configuration(self):
         configuration = conf.get_configuration()
@@ -151,7 +151,7 @@ def main(args=[]):
     """
     if len(args) <= 0:
         args = sys.argv[1:]
-    command, force, verbose, debug, conf_file_path = parse_args(args)
+    command, force, verbose, debug, conf_file_path, ext_handler_as_root = parse_args(args)
     if command == "version":
         version()
     elif command == "help":
@@ -172,7 +172,7 @@ def main(args=[]):
             elif command == "daemon":
                 agent.daemon()
             elif command == "run-exthandlers":
-                agent.run_exthandlers(debug)
+                agent.run_exthandlers(debug, ext_handler_as_root)
             elif command == "show-configuration":
                 agent.show_configuration()
         except Exception:
@@ -188,6 +188,7 @@ def parse_args(sys_args):
     force = False
     verbose = False
     debug = False
+    ext_handler_as_root = True
     conf_file_path = None
     for a in sys_args:
         m = re.match("^(?:[-/]*)configuration-path:([\w/\.\-_]+)", a)
@@ -219,6 +220,8 @@ def parse_args(sys_args):
             debug = True
         elif re.match("^([-/]*)force", a):
             force = True
+        elif re.match("^([-/]*)non_root", a):
+            ext_handler_as_root = False
         elif re.match("^([-/]*)show-configuration", a):
             cmd = "show-configuration"
         elif re.match("^([-/]*)(help|usage|\\?)", a):
@@ -227,7 +230,7 @@ def parse_args(sys_args):
             cmd = "help"
             break
 
-    return cmd, force, verbose, debug, conf_file_path
+    return cmd, force, verbose, debug, conf_file_path, ext_handler_as_root
 
 
 def version():
