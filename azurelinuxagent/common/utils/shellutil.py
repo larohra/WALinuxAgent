@@ -63,17 +63,17 @@ def has_command(cmd):
     """
     return not run(cmd, False)
 
-def run(cmd, chk_err=True, expected_errors=[]):
+def run(cmd, chk_err=True, log_output=False, expected_errors=[]):
     """
     Calls run_get_output on 'cmd', returning only the return code.
     If chk_err=True then errors will be reported in the log.
     If chk_err=False then errors will be suppressed from the log.
     """
-    retcode, out = run_get_output(cmd, chk_err=chk_err, expected_errors=expected_errors)
+    retcode, out = run_get_output(cmd, chk_err=chk_err, expected_errors=expected_errors, log_output=log_output)
     return retcode
 
 
-def run_get_output(cmd, chk_err=True, log_cmd=True, expected_errors=[]):
+def run_get_output(cmd, chk_err=True, log_cmd=True, expected_errors=[], log_output=False):
     """
     Wrapper for subprocess.check_output.
     Execute 'cmd'.  Returns return code and STDOUT, trapping expected
@@ -89,6 +89,9 @@ def run_get_output(cmd, chk_err=True, log_cmd=True, expected_errors=[]):
         output = ustr(output,
                       encoding='utf-8',
                       errors="backslashreplace")
+        if log_output:
+            # logger.info("Command: %s" % cmd)
+            logger.info("Output: %s" % output)
     except subprocess.CalledProcessError as e:
         output = ustr(e.output,
                       encoding='utf-8',

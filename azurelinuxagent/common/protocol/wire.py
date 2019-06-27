@@ -1480,13 +1480,7 @@ class Certificates(object):
                                        TRANSPORT_CERT_FILE_NAME)
         pem_file = os.path.join(conf.get_lib_dir(), PEM_FILE_NAME)
         # decrypt certificates
-        try:
-            # promote_process()
-            cryptutil.decrypt_p7m(p7m_file, trans_prv_file, trans_cert_file,
-                                pem_file)
-        finally:
-            pass
-            # demote_process()
+        cryptutil.decrypt_p7m(p7m_file, trans_prv_file, trans_cert_file,pem_file)
 
         # The parsing process use public key to match prv and crt.
         buf = []

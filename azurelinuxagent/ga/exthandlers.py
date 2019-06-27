@@ -1157,9 +1157,6 @@ class ExtHandlerInstance(object):
                 except Exception as e:
                     self.logger.warn("Unable to setup cgroup {0}: {1}".format(self.ext_handler.name, e))
 
-                # if process.poll() is None or process.poll() <= 0:
-                #     demote_process()
-
                 msg = ExtHandlerInstance._capture_process_output(process, stdout, stderr, cmd, timeout, extension_error_code)
 
                 duration = elapsed_milliseconds(begin_utc)

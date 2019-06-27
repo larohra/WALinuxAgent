@@ -39,7 +39,6 @@ class CryptUtil(object):
         self.openssl_cmd = openssl_cmd
 
     def gen_transport_cert(self, prv_file, crt_file):
-        from azurelinuxagent.common.utils.processutil import promote_process, demote_process, report_ids
         """
         Create ssl certificate for https communication with endpoint server.
         """
@@ -47,9 +46,10 @@ class CryptUtil(object):
                "-newkey rsa:2048 -keyout {1} "
                "-out {2}").format(self.openssl_cmd, prv_file, crt_file)
 
-        cmd = '/sbin/capsh --keep=1 --caps=cap_dac_override+eip --addamb=cap_dac_override -- -c "%s"' % cert_cmd
+        logger.info("Command: %s" % cert_cmd)
+        cmd = '/sbin/capsh --keep=1 --caps="cap_dac_override+eip cap_setpcap+ep" --addamb=cap_dac_override -- -c "capsh --print && %s"' % cert_cmd
 
-        rc = shellutil.run(cmd)
+        rc = shellutil.run(cmd, log_output=True)
         if rc != 0:
             logger.error("Failed to create {0} and {1} certificates".format(
                 prv_file, crt_file))
@@ -88,12 +88,16 @@ class CryptUtil(object):
         elif not os.path.exists(trans_prv_file):
             raise IOError(errno.ENOENT, "File not found", trans_prv_file)
         else:
-            cmd = ("{0} cms -decrypt -in {1} -inkey {2} -recip {3} "
+            cert_cmd = ("{0} cms -decrypt -in {1} -inkey {2} -recip {3} "
                    "| {4} pkcs12 -nodes -password pass: -out {5}"
                    "").format(self.openssl_cmd, p7m_file, trans_prv_file,
                               trans_cert_file, self.openssl_cmd, pem_file)
+
+            logger.info("Command: %s" % cert_cmd)
+            cmd = '/sbin/capsh --keep=1 --caps="cap_dac_override+eip cap_setpcap+ep" --addamb=cap_dac_override -- -c "capsh --print && %s"' % cert_cmd
+
             shellutil.run(cmd)
-            rc = shellutil.run(cmd)
+            rc = shellutil.run(cmd, log_output=True)
             if rc != 0:
                 logger.error("Failed to decrypt {0}".format(p7m_file))
 
