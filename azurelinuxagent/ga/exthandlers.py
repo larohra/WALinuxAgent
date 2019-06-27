@@ -399,7 +399,7 @@ class ExtHandlersHandler(object):
         return True
 
     def handle_ext_handler(self, ext_handler, etag):
-        ext_handler_i = ExtHandlerInstance(ext_handler, self.protocol)
+        ext_handler_i = ExtHandlerInstance(ext_handler, self.protocol, self.as_root)
 
         try:
             state = ext_handler.properties.state
@@ -601,7 +601,7 @@ class ExtHandlersHandler(object):
 
 
 class ExtHandlerInstance(object):
-    def __init__(self, ext_handler, protocol):
+    def __init__(self, ext_handler, protocol, as_root):
         self.ext_handler = ext_handler
         self.protocol = protocol
         self.operation = None
@@ -609,6 +609,7 @@ class ExtHandlerInstance(object):
         self.pkg_file = None
         self.is_upgrade = False
         self.logger = None
+        self.as_root = as_root
         self.set_logger()
 
         try:
@@ -1139,7 +1140,7 @@ class ExtHandlerInstance(object):
                         """
                         os.setsid()
                         CGroups.add_to_extension_cgroup(self.ext_handler.name, os.getpid())
-                        if self.ext_handler.as_root:
+                        if self.as_root:
                             promote_process()
 
                     process = subprocess.Popen(full_path,
@@ -1160,7 +1161,7 @@ class ExtHandlerInstance(object):
                     self.logger.warn("Unable to setup cgroup {0}: {1}".format(self.ext_handler.name, e))
 
                 rc = process.poll()
-                if self.ext_handler.as_root and (rc is None or rc <= 0):
+                if self.as_root and (rc is None or rc <= 0):
                     demote_process()
 
                 msg = ExtHandlerInstance._capture_process_output(process, stdout, stderr, cmd, timeout, extension_error_code)
