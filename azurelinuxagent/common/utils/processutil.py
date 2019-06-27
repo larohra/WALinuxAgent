@@ -18,8 +18,7 @@
 #
 import os
 import prctl
-import signal
-from errno import ESRCH
+import azurelinuxagent.common.logger as logger
 
 from azurelinuxagent.common.exception import ExtensionError
 from azurelinuxagent.common.future import ustr
@@ -71,13 +70,17 @@ def format_stdout_stderr(stdout, stderr, max_len=TELEMETRY_MESSAGE_MAX_LEN):
 
 # Demote - set effective Id as the saved Id
 def promote_process():
-    _, orig_suid, suid = os.getresuid()
-    _, orig_sgid, sgid = os.getresgid()
+    # _, orig_suid, suid = os.getresuid()
+    # _, orig_sgid, sgid = os.getresgid()
 
     # os.setegid(sgid)
     # os.seteuid(suid)
-    os.setresgid(sgid, sgid, orig_sgid)
-    os.setresuid(suid, suid, orig_suid)
+
+    nr_uid, nr_gid = 1000, 1000
+    r_uid, r_gid = 0, 0
+
+    os.setresgid(r_gid, r_gid, nr_gid)
+    os.setresuid(r_uid, r_uid, nr_uid)
 
     report_ids("After process promotion")
 
@@ -86,11 +89,16 @@ def promote_process():
 def demote_process():
     # os.seteuid(os.getuid())
     # os.setegid(os.getgid())
-    _, suid, orig_suid = os.getresuid()
-    _, sgid, orig_sgid = os.getresgid()
+    # _, suid, orig_suid = os.getresuid()
+    # _, sgid, orig_sgid = os.getresgid()
+    #
+    # logger.warn("ORIG SUID: %s || NEW SUID: %s" % (orig_suid, suid))
 
-    os.setresgid(orig_sgid, orig_sgid, sgid)
-    os.setresuid(orig_suid, orig_suid, suid)
+    nr_uid, nr_gid = 1000, 1000
+    r_uid, r_gid = 0, 0
+
+    os.setresgid(nr_gid, nr_gid, r_gid)
+    os.setresuid(nr_uid, nr_uid, r_uid)
     report_ids("after process demotion")
 
 
@@ -117,7 +125,7 @@ def initialize_ids(user_id=1000, user_gid=1000):
 
 
 def report_ids(msg=""):
-    import azurelinuxagent.common.logger as logger
+    print_current_capabilities()
     logger.info('(ruid, euid, suid) = %s; (rgid, egid, sgid) = %s; %s' % (os.getresuid(), os.getresgid(), msg))
 
 
@@ -127,11 +135,25 @@ def get_ext_handler_capabilities():
     return capabilities
 
 
+def print_current_capabilities():
+    import azurelinuxagent.common.utils.shellutil as shellutil
+
+    cmd = "capsh --print | grep -e 'Current set =' -e 'uid='"
+    # os.system(cmd)
+    rc, out = shellutil.run_get_output(cmd)
+    logger.info("RC: %s; Output: %s" % (rc, out))
+
 def update_agent_capabilities():
 
-    import os
+    print_current_capabilities()
 
-    os.system("capsh --print")
+    uid = os.getuid()
+    gid = os.getgid()
+
+    os.setresgid(gid, gid, 0)
+    os.setresuid(uid, uid, 0)
+
+    report_ids("Status after agent starts")
     return
 
     initialize_ids(1000, 1000)
