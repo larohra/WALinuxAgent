@@ -1138,7 +1138,7 @@ class ExtHandlerInstance(object):
                         """
                         os.setsid()
                         CGroups.add_to_extension_cgroup(self.ext_handler.name, os.getpid())
-                        # promote_process()
+                        promote_process()
 
                     process = subprocess.Popen(full_path,
                                                shell=True,

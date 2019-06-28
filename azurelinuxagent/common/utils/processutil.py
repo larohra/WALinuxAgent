@@ -69,17 +69,17 @@ def format_stdout_stderr(stdout, stderr, max_len=TELEMETRY_MESSAGE_MAX_LEN):
 
 # Demote - set effective Id as the saved Id
 def promote_process():
-    # _, orig_suid, suid = os.getresuid()
-    # _, orig_sgid, sgid = os.getresgid()
+    _, orig_suid, suid = os.getresuid()
+    _, orig_sgid, sgid = os.getresgid()
 
     # os.setegid(sgid)
     # os.seteuid(suid)
 
-    nr_uid, nr_gid = 1000, 1000
-    r_uid, r_gid = 0, 0
+    # nr_uid, nr_gid = 1000, 1000
+    # r_uid, r_gid = 0, 0
 
-    os.setresgid(r_gid, r_gid, nr_gid)
-    os.setresuid(r_uid, r_uid, nr_uid)
+    os.setresgid(sgid, sgid, orig_sgid)
+    os.setresuid(suid, suid, orig_suid)
 
     report_ids("After process promotion")
 
@@ -128,7 +128,7 @@ def report_ids(msg=""):
 
 
 def get_ext_handler_capabilities():
-    capabilities = ['cap_dac_override', 'cap_setgid', 'cap_setuid', 'cap_setpcap', 'cap_chown', 'cap_fowner',
+    capabilities = ['cap_dac_override', 'cap_setgid', 'cap_setuid', 'cap_setpcap', 'cap_fowner',
                     'cap_net_admin', 'cap_net_raw']
     return capabilities
 
