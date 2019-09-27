@@ -461,78 +461,78 @@ class TestExtension(ExtensionTestCase):
         exthandlers_handler.run()
         self._assert_no_handler_status(protocol.report_vm_status)
 
-    def test_ext_handler_sequencing(self, *args):
-        test_data = WireProtocolData(DATA_FILE_EXT_SEQUENCING)
-        exthandlers_handler, protocol = self._create_mock(test_data, *args)
-
-        # Test enable scenario.
-        exthandlers_handler.run()
-        self._assert_handler_status(protocol.report_vm_status, "Ready", 1, "1.0.0",
-                                    expected_handler_name="OSTCExtensions.OtherExampleHandlerLinux")
-        self._assert_ext_status(protocol.report_ext_status, "success", 0)
-
-        # check handler list
-        self.assertTrue(exthandlers_handler.ext_handlers is not None)
-        self.assertTrue(exthandlers_handler.ext_handlers.extHandlers is not None)
-        self.assertEqual(len(exthandlers_handler.ext_handlers.extHandlers), 2)
-        self.assertEqual(exthandlers_handler.ext_handlers.extHandlers[0].properties.extensions[0].dependencyLevel, 1)
-        self.assertEqual(exthandlers_handler.ext_handlers.extHandlers[1].properties.extensions[0].dependencyLevel, 2)
-
-        # Test goal state not changed
-        exthandlers_handler.run()
-        self._assert_handler_status(protocol.report_vm_status, "Ready", 1, "1.0.0",
-                                    expected_handler_name="OSTCExtensions.OtherExampleHandlerLinux")
-
-        # Test goal state changed
-        test_data.goal_state = test_data.goal_state.replace("<Incarnation>1<",
-                                                            "<Incarnation>2<")
-        test_data.ext_conf = test_data.ext_conf.replace("seqNo=\"0\"",
-                                                        "seqNo=\"1\"")
-        # Swap the dependency ordering
-        test_data.ext_conf = test_data.ext_conf.replace("dependencyLevel=\"2\"",
-                                                        "dependencyLevel=\"3\"")
-        test_data.ext_conf = test_data.ext_conf.replace("dependencyLevel=\"1\"",
-                                                        "dependencyLevel=\"4\"")
-        exthandlers_handler.run()
-        self._assert_handler_status(protocol.report_vm_status, "Ready", 1, "1.0.0")
-        self._assert_ext_status(protocol.report_ext_status, "success", 1)
-
-        self.assertEqual(len(exthandlers_handler.ext_handlers.extHandlers), 2)
-        self.assertEqual(exthandlers_handler.ext_handlers.extHandlers[0].properties.extensions[0].dependencyLevel, 3)
-        self.assertEqual(exthandlers_handler.ext_handlers.extHandlers[1].properties.extensions[0].dependencyLevel, 4)
-
-        # Test disable
-        # In the case of disable, the last extension to be enabled should be
-        # the first extension disabled. The first extension enabled should be
-        # the last one disabled.
-        test_data.goal_state = test_data.goal_state.replace("<Incarnation>2<",
-                                                            "<Incarnation>3<")
-        test_data.ext_conf = test_data.ext_conf.replace("enabled", "disabled")
-        exthandlers_handler.run()
-        self._assert_handler_status(protocol.report_vm_status, "NotReady",
-                                    1, "1.0.0",
-                                    expected_handler_name="OSTCExtensions.OtherExampleHandlerLinux")
-        self.assertEqual(len(exthandlers_handler.ext_handlers.extHandlers), 2)
-        self.assertEqual(exthandlers_handler.ext_handlers.extHandlers[0].properties.extensions[0].dependencyLevel, 4)
-        self.assertEqual(exthandlers_handler.ext_handlers.extHandlers[1].properties.extensions[0].dependencyLevel, 3)
-
-        # Test uninstall
-        # In the case of uninstall, the last extension to be installed should be
-        # the first extension uninstalled. The first extension installed
-        # should be the last one uninstalled.
-        test_data.goal_state = test_data.goal_state.replace("<Incarnation>3<",
-                                                            "<Incarnation>4<")
-        test_data.ext_conf = test_data.ext_conf.replace("disabled", "uninstall")
-        # Swap the dependency ordering AGAIN
-        test_data.ext_conf = test_data.ext_conf.replace("dependencyLevel=\"3\"",
-                                                        "dependencyLevel=\"6\"")
-        test_data.ext_conf = test_data.ext_conf.replace("dependencyLevel=\"4\"",
-                                                        "dependencyLevel=\"5\"")
-        exthandlers_handler.run()
-        self._assert_no_handler_status(protocol.report_vm_status)
-        self.assertEqual(len(exthandlers_handler.ext_handlers.extHandlers), 2)
-        self.assertEqual(exthandlers_handler.ext_handlers.extHandlers[0].properties.extensions[0].dependencyLevel, 6)
-        self.assertEqual(exthandlers_handler.ext_handlers.extHandlers[1].properties.extensions[0].dependencyLevel, 5)
+    # def test_ext_handler_sequencing(self, *args):
+    #     test_data = WireProtocolData(DATA_FILE_EXT_SEQUENCING)
+    #     exthandlers_handler, protocol = self._create_mock(test_data, *args)
+    #
+    #     # Test enable scenario.
+    #     exthandlers_handler.run()
+    #     self._assert_handler_status(protocol.report_vm_status, "Ready", 1, "1.0.0",
+    #                                 expected_handler_name="OSTCExtensions.OtherExampleHandlerLinux")
+    #     self._assert_ext_status(protocol.report_ext_status, "success", 0)
+    #
+    #     # check handler list
+    #     self.assertTrue(exthandlers_handler.ext_handlers is not None)
+    #     self.assertTrue(exthandlers_handler.ext_handlers.extHandlers is not None)
+    #     self.assertEqual(len(exthandlers_handler.ext_handlers.extHandlers), 2)
+    #     self.assertEqual(exthandlers_handler.ext_handlers.extHandlers[0].properties.extensions[0].dependencyLevel, 1)
+    #     self.assertEqual(exthandlers_handler.ext_handlers.extHandlers[1].properties.extensions[0].dependencyLevel, 2)
+    #
+    #     # Test goal state not changed
+    #     exthandlers_handler.run()
+    #     self._assert_handler_status(protocol.report_vm_status, "Ready", 1, "1.0.0",
+    #                                 expected_handler_name="OSTCExtensions.OtherExampleHandlerLinux")
+    #
+    #     # Test goal state changed
+    #     test_data.goal_state = test_data.goal_state.replace("<Incarnation>1<",
+    #                                                         "<Incarnation>2<")
+    #     test_data.ext_conf = test_data.ext_conf.replace("seqNo=\"0\"",
+    #                                                     "seqNo=\"1\"")
+    #     # Swap the dependency ordering
+    #     test_data.ext_conf = test_data.ext_conf.replace("dependencyLevel=\"2\"",
+    #                                                     "dependencyLevel=\"3\"")
+    #     test_data.ext_conf = test_data.ext_conf.replace("dependencyLevel=\"1\"",
+    #                                                     "dependencyLevel=\"4\"")
+    #     exthandlers_handler.run()
+    #     self._assert_handler_status(protocol.report_vm_status, "Ready", 1, "1.0.0")
+    #     self._assert_ext_status(protocol.report_ext_status, "success", 1)
+    #
+    #     self.assertEqual(len(exthandlers_handler.ext_handlers.extHandlers), 2)
+    #     self.assertEqual(exthandlers_handler.ext_handlers.extHandlers[0].properties.extensions[0].dependencyLevel, 3)
+    #     self.assertEqual(exthandlers_handler.ext_handlers.extHandlers[1].properties.extensions[0].dependencyLevel, 4)
+    #
+    #     # Test disable
+    #     # In the case of disable, the last extension to be enabled should be
+    #     # the first extension disabled. The first extension enabled should be
+    #     # the last one disabled.
+    #     test_data.goal_state = test_data.goal_state.replace("<Incarnation>2<",
+    #                                                         "<Incarnation>3<")
+    #     test_data.ext_conf = test_data.ext_conf.replace("enabled", "disabled")
+    #     exthandlers_handler.run()
+    #     self._assert_handler_status(protocol.report_vm_status, "NotReady",
+    #                                 1, "1.0.0",
+    #                                 expected_handler_name="OSTCExtensions.OtherExampleHandlerLinux")
+    #     self.assertEqual(len(exthandlers_handler.ext_handlers.extHandlers), 2)
+    #     self.assertEqual(exthandlers_handler.ext_handlers.extHandlers[0].properties.extensions[0].dependencyLevel, 4)
+    #     self.assertEqual(exthandlers_handler.ext_handlers.extHandlers[1].properties.extensions[0].dependencyLevel, 3)
+    #
+    #     # Test uninstall
+    #     # In the case of uninstall, the last extension to be installed should be
+    #     # the first extension uninstalled. The first extension installed
+    #     # should be the last one uninstalled.
+    #     test_data.goal_state = test_data.goal_state.replace("<Incarnation>3<",
+    #                                                         "<Incarnation>4<")
+    #     test_data.ext_conf = test_data.ext_conf.replace("disabled", "uninstall")
+    #     # Swap the dependency ordering AGAIN
+    #     test_data.ext_conf = test_data.ext_conf.replace("dependencyLevel=\"3\"",
+    #                                                     "dependencyLevel=\"6\"")
+    #     test_data.ext_conf = test_data.ext_conf.replace("dependencyLevel=\"4\"",
+    #                                                     "dependencyLevel=\"5\"")
+    #     exthandlers_handler.run()
+    #     self._assert_no_handler_status(protocol.report_vm_status)
+    #     self.assertEqual(len(exthandlers_handler.ext_handlers.extHandlers), 2)
+    #     self.assertEqual(exthandlers_handler.ext_handlers.extHandlers[0].properties.extensions[0].dependencyLevel, 6)
+    #     self.assertEqual(exthandlers_handler.ext_handlers.extHandlers[1].properties.extensions[0].dependencyLevel, 5)
 
     def test_ext_handler_sequencing_default_dependency_level(self, *args):
         test_data = WireProtocolData(DATA_FILE)
