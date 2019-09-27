@@ -27,6 +27,17 @@ from azurelinuxagent.common.protocol.restapi import Extension, ExtHandlerPropert
 from azurelinuxagent.ga.exthandlers import *
 from azurelinuxagent.common.protocol.wire import WireProtocol, InVMArtifactsProfile
 
+# Mock sleep to reduce test execution time
+_SLEEP = time.sleep
+
+
+def mock_sleep(sec=0.01):
+    """
+    Mocks the time.sleep method to reduce unit test time
+    :param sec: Time to replace the sleep call with, default = 0.01sec
+    """
+    _SLEEP(sec)
+
 
 def do_not_run_test():
     return True
