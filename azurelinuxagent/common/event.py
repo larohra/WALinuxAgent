@@ -92,6 +92,7 @@ class WALAEventOperation:
     Unknown = "Unknown"
     Upgrade = "Upgrade"
     Update = "Update"
+    BackupSeqMisMatch = "BackupSeqMisMatch"
 
 
 SHOULD_ENCODE_MESSAGE_LEN = 80

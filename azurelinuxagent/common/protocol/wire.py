@@ -755,17 +755,22 @@ class WireClient(object):
             self.ext_conf = ExtensionsConfig(None)
             return
         incarnation = goal_state.incarnation
+        add_event(AGENT_NAME, op=WALAEventOperation.BackupSeqMisMatch, is_success=False,
+                  message="Updating Extension Config for incarnation: %s" % incarnation)
         local_file = os.path.join(conf.get_lib_dir(),
                                   EXT_CONF_FILE_NAME.format(incarnation))
         xml_text = self.fetch_config(goal_state.ext_uri, self.get_header())
         self.save_cache(local_file, xml_text)
         self.ext_conf = ExtensionsConfig(xml_text)
 
-    def save_or_update_goal_state_file(self, incarnation, xml_text):
+    def save_or_update_goal_state_file(self, incarnation, xml_text, send_event=True):
         # It should create a new file if the incarnation number is new.
         # It should overwrite the existing file if the incarnation number is the same.
         file_name = GOAL_STATE_FILE_NAME.format(incarnation)
         goal_state_file = os.path.join(conf.get_lib_dir(), file_name)
+        if send_event:
+            add_event(AGENT_NAME, op=WALAEventOperation.BackupSeqMisMatch, is_success=False,
+                      message="Updating GoalState: %s" % xml_text)
         self.save_cache(goal_state_file, xml_text)
 
     def update_host_plugin(self, container_id, role_config_name):
@@ -795,12 +800,21 @@ class WireClient(object):
                             # can change without the incarnation number changing. Ensure they are updated in
                             # the goal state file on disk, as well as in the HostGA plugin instance.
                             self.goal_state = current_goal_state_from_configuration
-                            self.save_or_update_goal_state_file(new_incarnation, xml_text)
+                            self.save_or_update_goal_state_file(new_incarnation, xml_text, send_event=False)
                             self.update_host_plugin(current_goal_state_from_configuration.container_id,
                                                     current_goal_state_from_configuration.role_config_name)
 
                             return
                 self.goal_state_flusher.flush(datetime.utcnow())
+
+                if os.path.isfile(incarnation_file):
+                    last_incarnation = fileutil.read_file(incarnation_file)
+                    gs_updated = not (
+                                last_incarnation is not None and last_incarnation == current_goal_state_from_configuration.incarnation)
+                    add_event(AGENT_NAME, op=WALAEventOperation.BackupSeqMisMatch, is_success=False,
+                              message="gs_updated: %s; Last Incarnation: %s; New Incarnation: %s" % (gs_updated,
+                                                                                                     last_incarnation,
+                                                                                                     current_goal_state_from_configuration.incarnation))
 
                 self.goal_state = current_goal_state_from_configuration
                 self.save_or_update_goal_state_file(current_goal_state_from_configuration.incarnation, xml_text)
@@ -1664,14 +1678,20 @@ class ExtensionsConfig(object):
             self.vmagent_manifests.vmAgentManifests.append(manifest)
 
         plugins_list = find(xml_doc, "Plugins")
+        add_event(AGENT_NAME, op=WALAEventOperation.BackupSeqMisMatch, is_success=False,
+                  message="All Plugins: %s" % plugins_list)
         plugins = findall(plugins_list, "Plugin")
         plugin_settings_list = find(xml_doc, "PluginSettings")
+        add_event(AGENT_NAME, op=WALAEventOperation.BackupSeqMisMatch, is_success=False,
+                  message="All Plugin Settings: %s" % plugin_settings_list)
         plugin_settings = findall(plugin_settings_list, "Plugin")
 
         for plugin in plugins:
             ext_handler = self.parse_plugin(plugin)
             self.ext_handlers.extHandlers.append(ext_handler)
             self.parse_plugin_settings(ext_handler, plugin_settings)
+            add_event(AGENT_NAME, op=WALAEventOperation.BackupSeqMisMatch, is_success=False,
+                      message="ExtHanlder: %s" % ext_handler)
 
         self.status_upload_blob = findtext(xml_doc, "StatusUploadBlob")
         self.artifacts_profile_blob = findtext(xml_doc, "InVMArtifactsProfileBlob")
