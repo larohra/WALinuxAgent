@@ -235,7 +235,7 @@ class ExtensionTelemetryHandler(object):
 
             add_log_event(level=logger.LogLevel.WARNING, message=msg, forced=True)
 
-        logger.info("Collected {0} events for extension: {1}".format(len(events_list.events), handler_name))
+        logger.info("Collected {0} events for extension: {1}".format(captured_extension_events_count, handler_name))
 
     @staticmethod
     def _ensure_all_events_directories_empty(extension_events_directories):
