@@ -109,6 +109,7 @@ class ExtensionTelemetryHandler(object):
     def daemon(self):
         op = PeriodicOperation("collect_and_send_events", self.collect_and_send_events,
                                self.EXTENSION_EVENT_COLLECTION_PERIOD)
+        logger.info("Successfully started the {0} thread".format(self.get_thread_name()))
         while not self.stopped():
             try:
                 op.run()
@@ -232,7 +233,7 @@ class ExtensionTelemetryHandler(object):
         if dropped_events_with_error_count is not None and len(dropped_events_with_error_count) > 0:
             msg = "Dropped events for Extension: {0}; Details:\n {1}".format(handler_name,
                 '\n'.join(["Reason: {0}; Dropped Count: {1}".format(k, v) for k, v in dropped_events_with_error_count.items()]))
-
+            logger.warn(msg)
             add_log_event(level=logger.LogLevel.WARNING, message=msg, forced=True)
 
         if captured_extension_events_count > 0:
