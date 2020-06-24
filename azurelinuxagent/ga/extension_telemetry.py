@@ -235,7 +235,8 @@ class ExtensionTelemetryHandler(object):
 
             add_log_event(level=logger.LogLevel.WARNING, message=msg, forced=True)
 
-        logger.info("Collected {0} events for extension: {1}".format(captured_extension_events_count, handler_name))
+        if captured_extension_events_count > 0:
+            logger.info("Collected {0} events for extension: {1}".format(captured_extension_events_count, handler_name))
 
     @staticmethod
     def _ensure_all_events_directories_empty(extension_events_directories):
@@ -255,7 +256,9 @@ class ExtensionTelemetryHandler(object):
                 except Exception as e:
                     # Only log the first error once per handler per run if unable to clean off residue files
                     err = ustr(e) if err is None else err
-                logger.error("Failed to completely clear the {0} directory. Exception: {1}", event_dir_path, err)
+
+                if err is not None:
+                    logger.error("Failed to completely clear the {0} directory. Exception: {1}", event_dir_path, err)
 
     def _parse_event_file_and_capture_events(self, handler_name, event_file_path, captured_events_count,
                                              dropped_events_with_error_count):
