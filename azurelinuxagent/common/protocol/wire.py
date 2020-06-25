@@ -488,7 +488,7 @@ class StatusBlob(object):
 
 
 def event_param_to_v1(param):
-    param_format = '<Param Name="{0}" Value={1} T="{2}" />'
+    param_format = u'<Param Name="{0}" Value={1} T="{2}" />'
     param_type = type(param.value)
     attr_type = ""
     if param_type is int:
@@ -510,9 +510,7 @@ def event_to_v1(event):
     params = ""
     for param in event.parameters:
         params += event_param_to_v1(param)
-    event_str = ('<Event id="{0}">'
-                 '<![CDATA[{1}]]>'
-                 '</Event>').format(event.eventId, params)
+    event_str = u'<Event id="{0}"><![CDATA[{1}]]></Event>'.format(event.eventId, params)
     return event_str
 
 
