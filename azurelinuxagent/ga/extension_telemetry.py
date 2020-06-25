@@ -58,12 +58,12 @@ class ExtensionTelemetryHandler(object):
     Kusto for advanced debuggability.
     """
 
-    EXTENSION_EVENT_COLLECTION_PERIOD = datetime.timedelta(minutes=5)
+    EXTENSION_EVENT_COLLECTION_PERIOD = datetime.timedelta(minutes=1)
     EXTENSION_EVENT_FILE_NAME_REGEX = re.compile(r"^(\d+)\.json$", re.IGNORECASE)
 
     # Limits
     MAX_NUMBER_OF_EVENTS_PER_EXTENSION_PER_PERIOD = 300
-    EXTENSION_EVENT_FILE_MAX_SIZE = 0.1 * 1024 * 1024  # 4 MB = 4 * 1,048,576 Bytes
+    EXTENSION_EVENT_FILE_MAX_SIZE = 1 * 1024 * 1024  # 4 MB = 4 * 1,048,576 Bytes
     EXTENSION_EVENT_MAX_SIZE = 1024 * 6   # 6Kb or 6144 characters. Limit for the whole event. Prevent oversized events.
     EXTENSION_EVENT_MAX_MSG_LEN = 1024 * 3  # 3Kb or 3072 chars.
 
