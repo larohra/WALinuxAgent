@@ -198,14 +198,6 @@ class ExtensionTelemetryHandler(object):
             try:
                 logger.verbose("Processing event file: {0}", event_file_path)
 
-                # We only allow MAX_NUMBER_OF_EVENTS_PER_EXTENSION_PER_PERIOD=300 maximum events per period per handler
-                if captured_extension_events_count >= self.MAX_NUMBER_OF_EVENTS_PER_EXTENSION_PER_PERIOD:
-                    msg = "Reached max count for the extension: {0}; Max Limit: {1}. Skipping the rest.".format(
-                        handler_name, self.MAX_NUMBER_OF_EVENTS_PER_EXTENSION_PER_PERIOD)
-                    logger.warn(msg)
-                    add_log_event(level=logger.LogLevel.WARNING, message=msg, forced=True)
-                    break
-
                 # We only support 4Mb max file size
                 event_file_size = os.stat(event_file_path).st_size
                 if event_file_size > self.EXTENSION_EVENT_FILE_MAX_SIZE:
@@ -223,6 +215,14 @@ class ExtensionTelemetryHandler(object):
                 events_list.events.extend(parsed_events)
                 captured_extension_events_count += len(parsed_events)
 
+                # We only allow MAX_NUMBER_OF_EVENTS_PER_EXTENSION_PER_PERIOD=300 maximum events per period per handler
+                if captured_extension_events_count >= self.MAX_NUMBER_OF_EVENTS_PER_EXTENSION_PER_PERIOD:
+                    msg = "Reached max count for the extension: {0}; Max Limit: {1}. Skipping the rest.".format(
+                        handler_name, self.MAX_NUMBER_OF_EVENTS_PER_EXTENSION_PER_PERIOD)
+                    logger.warn(msg)
+                    add_log_event(level=logger.LogLevel.WARNING, message=msg, forced=True)
+                    break
+
             except Exception as e:
                 msg = "Failed to process event file {0}: {1}", event_file, ustr(e)
                 logger.warn(msg)
@@ -231,8 +231,8 @@ class ExtensionTelemetryHandler(object):
                 os.remove(event_file_path)
 
         if dropped_events_with_error_count is not None and len(dropped_events_with_error_count) > 0:
-            msg = "Dropped events for Extension: {0}; Details:\n {1}".format(handler_name,
-                '\n'.join(["Reason: {0}; Dropped Count: {1}".format(k, v) for k, v in dropped_events_with_error_count.items()]))
+            msg = "Dropped events for Extension: {0}; Details:\n\t {1}".format(handler_name,
+                '\n\t'.join(["Reason: {0}; Dropped Count: {1}".format(k, v) for k, v in dropped_events_with_error_count.items()]))
             logger.warn(msg)
             add_log_event(level=logger.LogLevel.WARNING, message=msg, forced=True)
 
