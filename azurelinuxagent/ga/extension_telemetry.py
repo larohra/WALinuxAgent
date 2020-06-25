@@ -58,11 +58,11 @@ class ExtensionTelemetryHandler(object):
     Kusto for advanced debuggability.
     """
 
-    EXTENSION_EVENT_COLLECTION_PERIOD = datetime.timedelta(minutes=1)
+    EXTENSION_EVENT_COLLECTION_PERIOD = datetime.timedelta(minutes=5)
     EXTENSION_EVENT_FILE_NAME_REGEX = re.compile(r"^(\d+)\.json$", re.IGNORECASE)
 
     # Limits
-    MAX_NUMBER_OF_EVENTS_PER_EXTENSION_PER_PERIOD = 30
+    MAX_NUMBER_OF_EVENTS_PER_EXTENSION_PER_PERIOD = 300
     EXTENSION_EVENT_FILE_MAX_SIZE = 4 * 1024 * 1024  # 4 MB = 4 * 1,048,576 Bytes
     EXTENSION_EVENT_MAX_SIZE = 1024 * 6   # 6Kb or 6144 characters. Limit for the whole event. Prevent oversized events.
     EXTENSION_EVENT_MAX_MSG_LEN = 1024 * 3  # 3Kb or 3072 chars.
@@ -231,8 +231,8 @@ class ExtensionTelemetryHandler(object):
                 os.remove(event_file_path)
 
         if dropped_events_with_error_count is not None and len(dropped_events_with_error_count) > 0:
-            msg = "Dropped events for Extension: {0}; Details:\n\t {1}".format(handler_name,
-                '\n\t'.join(["Reason: {0}; Dropped Count: {1}".format(k, v) for k, v in dropped_events_with_error_count.items()]))
+            msg = "Dropped events for Extension: {0}; Details:\n\t{1}".format(handler_name, '\n\t'.join(
+                ["Reason: {0}; Dropped Count: {1}".format(k, v) for k, v in dropped_events_with_error_count.items()]))
             logger.warn(msg)
             add_log_event(level=logger.LogLevel.WARNING, message=msg, forced=True)
 
