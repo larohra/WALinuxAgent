@@ -1070,11 +1070,11 @@ class WireClient(object):
 
     def send_event(self, provider_id, event_str):
         uri = TELEMETRY_URI.format(self.get_endpoint())
-        data_format = ('<?xml version="1.0"?>'
-                       '<TelemetryData version="1.0">'
-                       '<Provider id="{0}">{1}'
-                       '</Provider>'
-                       '</TelemetryData>')
+        data_format = (u'<?xml version="1.0"?>'
+                       u'<TelemetryData version="1.0">'
+                       u'<Provider id="{0}">{1}'
+                       u'</Provider>'
+                       u'</TelemetryData>')
         data = data_format.format(provider_id, event_str)
         try:
             header = self.get_header_for_xml_content()
