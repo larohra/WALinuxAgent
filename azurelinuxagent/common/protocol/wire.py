@@ -511,7 +511,7 @@ def event_to_v1(event):
     for param in event.parameters:
         params += event_param_to_v1(param)
     event_str = u'<Event id="{0}"><![CDATA[{1}]]></Event>'.format(event.eventId, params)
-    return event_str.encode('utf-8')
+    return event_str
 
 
 class WireClient(object):
@@ -1111,7 +1111,7 @@ class WireClient(object):
                                      "Single event too large: {0}, with the length: {1} more than the limit({2})"
                                      .format(str(details_of_event), len(event_str), MAX_EVENT_BUFFER_SIZE))
                 continue
-            if len(buf[event.providerId] + event_str) >= MAX_EVENT_BUFFER_SIZE:
+            if len(buf[event.providerId] + event_str.encode('utf-8')) >= MAX_EVENT_BUFFER_SIZE:
                 self.send_event(event.providerId, buf[event.providerId])
                 buf[event.providerId] = ""
                 logger.info("No of events this request = {0}".format(events_per_request))
