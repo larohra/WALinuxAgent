@@ -1077,7 +1077,7 @@ class WireClient(object):
                        u'<Provider id="{0}">{1}'
                        u'</Provider>'
                        u'</TelemetryData>')
-        data = data_format.format(provider_id, event_str).encode('utf-8')
+        data = data_format.format(provider_id, event_str)
         try:
             header = self.get_header_for_xml_content()
             # NOTE: The call to wireserver requests utf-8 encoding in the headers, but the body should not
