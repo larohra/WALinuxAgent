@@ -132,6 +132,7 @@ class ExtensionTelemetryHandler(object):
             while retry_count < 3:
                 try:
                     self._protocol.report_event(event_list)
+                    break
                 except ProtocolError as e:
                     logger.error("Error: {0}; Retry: {1}; Length Event List: {2}".format(e, retry_count, len(event_list.events)))
                     retry_count += 1
