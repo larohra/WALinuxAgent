@@ -128,6 +128,7 @@ class ExtensionTelemetryHandler(object):
 
         if len(event_list.events) > 0:
             retry_count = 0
+            logger.info("Total extension events to send: {0}".format(len(event_list.events)))
             while retry_count < 3:
                 try:
                     self._protocol.report_event(event_list)
@@ -135,6 +136,7 @@ class ExtensionTelemetryHandler(object):
                     logger.error("Error: {0}; Retry: {1}; Length Event List: {2}".format(e, retry_count, len(event_list.events)))
                     retry_count += 1
                     time.sleep(15)
+            logger.info("Completed the run. Success: {0}".format(retry_count < 3))
 
     def _collect_extension_events(self):
         events_list = TelemetryEventList()

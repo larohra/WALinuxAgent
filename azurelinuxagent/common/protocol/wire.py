@@ -1087,7 +1087,8 @@ class WireClient(object):
         if restutil.request_failed(resp):
             logger.verbose(resp.read())
             raise ProtocolError(
-                "Failed to send events:{0}".format(resp.status))
+                "Failed to send events:{0}. Length of string: {1}; Allowed max: {2}".format(resp.status, len(data),
+                                                                                            MAX_EVENT_BUFFER_SIZE))
 
     def report_event(self, event_list):
         buf = {}
