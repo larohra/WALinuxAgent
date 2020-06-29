@@ -110,7 +110,8 @@ class ExtensionTelemetryHandler(object):
     def daemon(self):
         op = PeriodicOperation("collect_and_send_events", self.collect_and_send_events,
                                self.EXTENSION_EVENT_COLLECTION_PERIOD)
-        logger.info("Successfully started the {0} thread".format(self.get_thread_name()))
+        logger.info("Successfully started the {0} thread. Polling duration: {1} secs".format(self.get_thread_name(),
+                                                                                             self.EXTENSION_EVENT_COLLECTION_PERIOD.seconds))
         while not self.stopped():
             try:
                 op.run()
