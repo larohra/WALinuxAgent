@@ -21,6 +21,7 @@ import json
 import os
 import re
 import threading
+import time
 from collections import defaultdict
 
 import azurelinuxagent.common.logger as logger
@@ -58,7 +59,7 @@ class ExtensionTelemetryHandler(object):
     Kusto for advanced debuggability.
     """
 
-    EXTENSION_EVENT_COLLECTION_PERIOD = datetime.timedelta(minutes=5)
+    EXTENSION_EVENT_COLLECTION_PERIOD = datetime.timedelta(minutes=2)
     EXTENSION_EVENT_FILE_NAME_REGEX = re.compile(r"^(\d+)\.json$", re.IGNORECASE)
 
     # Limits
@@ -132,6 +133,7 @@ class ExtensionTelemetryHandler(object):
                 except ProtocolError as e:
                     logger.error("Error: {0}; Retry: {1}; Length Event List: {2}".format(e, retry_count, len(event_list.events)))
                     retry_count += 1
+                    time.sleep(15)
 
     def _collect_extension_events(self):
         events_list = TelemetryEventList()
