@@ -511,7 +511,7 @@ def event_to_v1(event):
     for param in event.parameters:
         params += event_param_to_v1(param)
     event_str = u'<Event id="{0}"><![CDATA[{1}]]></Event>'.format(event.eventId, params)
-    return event_str
+    return event_str.encode('utf-8')
 
 
 class WireClient(object):
