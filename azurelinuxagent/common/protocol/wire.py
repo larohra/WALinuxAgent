@@ -1122,6 +1122,7 @@ class WireClient(object):
         # Send out all events left in buffer.
         for provider_id in list(buf.keys()):
             if len(buf[provider_id]) > 0:
+                logger.info("No of events this request = {0}".format(events_per_request))
                 self.send_event(provider_id, buf[provider_id])
 
     def report_status_event(self, message, is_success):
