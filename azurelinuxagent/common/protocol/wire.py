@@ -545,8 +545,9 @@ class WireClient(object):
             raise
 
         except Exception as e:
-            raise ProtocolError("[Wireserver Exception] {0}".format(
-                ustr(e)))
+            uri, data = args
+            raise ProtocolError("[Wireserver Exception] {0}; Length: {1}; Max Allowed: {2}; URI: {3}".format(
+                ustr(e), len(data), MAX_EVENT_BUFFER_SIZE, uri))
 
         return resp
 
@@ -1082,7 +1083,9 @@ class WireClient(object):
             #       be encoded: some nodes in the telemetry pipeline do not support utf-8 encoding.
             resp = self.call_wireserver(restutil.http_post, uri, data, header)
         except HttpError as e:
-            raise ProtocolError("Failed to send events:{0}".format(e))
+            raise ProtocolError(
+                "Failed to send events:{0}. Length of string: {1}; Allowed max: {2}".format(e, len(data),
+                                                                                            MAX_EVENT_BUFFER_SIZE))
 
         if restutil.request_failed(resp):
             logger.verbose(resp.read())
