@@ -545,7 +545,8 @@ class WireClient(object):
             raise
 
         except Exception as e:
-            uri, data, *_ = args
+            uri = args[0]
+            data = args[1]
             raise ProtocolError("[Wireserver Exception] {0}; Length: {1}; Max Allowed: {2}; URI: {3}".format(
                 ustr(e), len(data), MAX_EVENT_BUFFER_SIZE, uri))
 
@@ -1095,6 +1096,7 @@ class WireClient(object):
 
     def report_event(self, event_list):
         buf = {}
+        events_per_request = 0
         # Group events by providerId
         for event in event_list.events:
             if event.providerId not in buf:
@@ -1112,7 +1114,10 @@ class WireClient(object):
             if len(buf[event.providerId] + event_str) >= MAX_EVENT_BUFFER_SIZE:
                 self.send_event(event.providerId, buf[event.providerId])
                 buf[event.providerId] = ""
+                logger.info("No of events this request = {0}".format(events_per_request))
+                events_per_request = 0
             buf[event.providerId] = buf[event.providerId] + event_str
+            events_per_request += 1
 
         # Send out all events left in buffer.
         for provider_id in list(buf.keys()):
