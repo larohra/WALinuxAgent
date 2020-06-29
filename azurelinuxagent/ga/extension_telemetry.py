@@ -27,7 +27,7 @@ import azurelinuxagent.common.logger as logger
 from azurelinuxagent.common import conf
 from azurelinuxagent.common.event import EVENTS_DIRECTORY, TELEMETRY_LOG_EVENT_ID, \
     TELEMETRY_LOG_PROVIDER_ID, add_common_params_to_extension_event, add_event, WALAEventOperation, add_log_event
-from azurelinuxagent.common.exception import InvalidExtensionEventError
+from azurelinuxagent.common.exception import InvalidExtensionEventError, ProtocolError
 from azurelinuxagent.common.future import ustr
 from azurelinuxagent.common.telemetryevent import TelemetryEventList, TelemetryEvent, TelemetryEventParam, \
     GuestAgentGenericLogsSchema
@@ -125,7 +125,13 @@ class ExtensionTelemetryHandler(object):
         event_list = self._collect_extension_events()
 
         if len(event_list.events) > 0:
-            self._protocol.report_event(event_list)
+            retry_count = 0
+            while retry_count < 3:
+                try:
+                    self._protocol.report_event(event_list)
+                except ProtocolError as e:
+                    logger.error("Error: {0}; Retry: {1}; Length Event List: {2}".format(e, retry_count, len(event_list.events)))
+                    retry_count += 1
 
     def _collect_extension_events(self):
         events_list = TelemetryEventList()
