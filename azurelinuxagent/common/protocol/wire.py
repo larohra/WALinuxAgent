@@ -511,7 +511,7 @@ def event_to_v1(event):
     for param in event.parameters:
         params += event_param_to_v1(param)
     event_str = u'<Event id="{0}"><![CDATA[{1}]]></Event>'.format(event.eventId, params)
-    return event_str
+    return event_str.encode('utf-8')
 
 
 class WireClient(object):
@@ -1077,7 +1077,7 @@ class WireClient(object):
                        u'<Provider id="{0}">{1}'
                        u'</Provider>'
                        u'</TelemetryData>')
-        data = data_format.format(provider_id, event_str)
+        data = data_format.format(provider_id, event_str).encode('utf-8')
         try:
             header = self.get_header_for_xml_content()
             # NOTE: The call to wireserver requests utf-8 encoding in the headers, but the body should not
@@ -1100,7 +1100,7 @@ class WireClient(object):
         # Group events by providerId
         for event in event_list.events:
             if event.providerId not in buf:
-                buf[event.providerId] = ""
+                buf[event.providerId] = "".encode("utf-8")
             event_str = event_to_v1(event)
             if len(event_str) >= MAX_EVENT_BUFFER_SIZE:
                 details_of_event = [ustr(x.name) + ":" + ustr(x.value) for x in event.parameters if x.name in
@@ -1111,9 +1111,9 @@ class WireClient(object):
                                      "Single event too large: {0}, with the length: {1} more than the limit({2})"
                                      .format(str(details_of_event), len(event_str), MAX_EVENT_BUFFER_SIZE))
                 continue
-            if len(buf[event.providerId] + event_str.encode('utf-8')) >= MAX_EVENT_BUFFER_SIZE:
+            if len((buf[event.providerId] + event_str)) >= MAX_EVENT_BUFFER_SIZE:
                 self.send_event(event.providerId, buf[event.providerId])
-                buf[event.providerId] = ""
+                buf[event.providerId] = "".encode('utf-8')
                 logger.info("No of events this request = {0}".format(events_per_request))
                 events_per_request = 0
             buf[event.providerId] = buf[event.providerId] + event_str
