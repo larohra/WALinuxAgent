@@ -319,11 +319,11 @@ def _http_request(method, host, rel_uri, port=None, data=None, secure=False,
                                          conn_port,
                                          timeout=10)
 
-    logger.verbose("HTTP connection [{0}] [{1}] [{2}] [{3}]",
-                   method,
-                   redact_sas_tokens_in_urls(url),
-                   data,
-                   headers)
+    # logger.verbose("HTTP connection [{0}] [{1}] [{2}] [{3}]",
+    #                method,
+    #                redact_sas_tokens_in_urls(url),
+    #                data,
+    #                headers)
 
     conn.request(method=method, url=url, body=data, headers=headers)
     return conn.getresponse()
