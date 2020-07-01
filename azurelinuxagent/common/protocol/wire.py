@@ -545,10 +545,9 @@ class WireClient(object):
             raise
 
         except Exception as e:
-            uri = args[0]
             data = args[1]
-            raise ProtocolError("[Wireserver Exception] {0}; Length: {1}; Max Allowed: {2}; URI: {3}".format(
-                ustr(e), len(data), MAX_EVENT_BUFFER_SIZE, uri))
+            raise ProtocolError("[Wireserver Exception] {0}; Stack: {1}; Length: {2}; Max Allowed: {3}".format(
+                ustr(e), traceback.format_exc(), len(data), MAX_EVENT_BUFFER_SIZE))
 
         return resp
 
