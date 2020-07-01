@@ -126,7 +126,7 @@ class Logger(object):
 
         # if msg_format is not unicode convert it to unicode
         if type(msg_format) is not ustr:
-            msg_format = ustr(msg_format, errors="backslashreplace")
+            msg_format = ustr(msg_format, errors="backslashreplace", encoding='utf-8')
         if len(args) > 0:
             msg = msg_format.format(*args)
         else:
