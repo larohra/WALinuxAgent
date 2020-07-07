@@ -402,6 +402,11 @@ def format_memory_value(unit, value):
 def str_to_encoded_ustr(s):
     from azurelinuxagent.common.version import PY_VERSION_MAJOR
     if PY_VERSION_MAJOR > 2:
-        # For py3+, str() is encoded to utf-8 by default so no need for extra encoding
-        return ustr(s)
+        try:
+            if isinstance(s, bytes):
+                # str.encode() returns bytes which should be decoded to get the str.
+                return s.decode('utf-8')
+        finally:
+            # If its not encoded or some error with, just return the string
+            return ustr(s)
     return ustr(s, encoding='utf-8')

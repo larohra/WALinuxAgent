@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright 2018 Microsoft Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -713,6 +714,7 @@ def initialize_event_logger_vminfo_common_parameters(protocol, reporter=__event_
 
 def add_event(name=AGENT_NAME, op=WALAEventOperation.Unknown, is_success=True, duration=0, version=str(CURRENT_VERSION),
               message="", log_event=True, reporter=__event_logger__):
+    message = message + "\nRandom string: いろはにほへとちりぬるを"
     if reporter.event_dir is None:
         logger.warn("Cannot add event -- Event reporter is not initialized.")
         _log_event(name, op, message, duration, is_success=is_success)
