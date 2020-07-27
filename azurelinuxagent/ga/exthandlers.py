@@ -1241,6 +1241,14 @@ class ExtHandlerInstance(object):
                             ExtCommandEnvVariable.ExtensionVersion: str(self.ext_handler.properties.version),
                             ExtCommandEnvVariable.ExtensionSeqNumber: str(self.get_seq_no())})
 
+                paths = env["PATH"].split(":")
+                for _ in paths:
+                    if "venv" in _:
+                        paths.remove(_)
+                        break
+
+                env["PATH"] = ":".join(paths)
+
                 try:
                     # Some extensions erroneously begin cmd with a slash; don't interpret those
                     # as root-relative. (Issue #1170)
