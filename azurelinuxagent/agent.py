@@ -167,7 +167,7 @@ def download_and_setup_agent_py_interpreter(agent_py_path):
         raise IOError("Tar file {0} not found".format(tar_file))
 
     setup_py_file_name = "setup_python.sh"
-    copy(os.path.join(os.getcwd(), setup_py_file_name), agent_py_path)
+    copy(os.path.join(os.path.dirname(os.path.abspath(__file__)), setup_py_file_name), agent_py_path)
 
     with tarfile.open(tar_file) as tf:
         tf.extractall(path=agent_py_path)
