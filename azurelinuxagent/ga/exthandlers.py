@@ -1243,7 +1243,7 @@ class ExtHandlerInstance(object):
 
                 paths = env["PATH"].split(":")
                 for _ in paths:
-                    if "venv" in _:
+                    if "waagent-venv" in _:
                         paths.remove(_)
                         break
 

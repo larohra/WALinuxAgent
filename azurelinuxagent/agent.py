@@ -23,22 +23,25 @@ Module agent
 
 from __future__ import print_function
 
+import glob
 import os
-import sys
 import re
 import subprocess
+import sys
+import tarfile
 import threading
 import traceback
+from shutil import copy
 
-import azurelinuxagent.common.logger as logger
-import azurelinuxagent.common.event as event
 import azurelinuxagent.common.conf as conf
-from azurelinuxagent.common.version import AGENT_NAME, AGENT_LONG_VERSION, \
-                                     DISTRO_NAME, DISTRO_VERSION, \
-                                     PY_VERSION_MAJOR, PY_VERSION_MINOR, \
-                                     PY_VERSION_MICRO, GOAL_STATE_AGENT_VERSION
+import azurelinuxagent.common.event as event
+import azurelinuxagent.common.logger as logger
 from azurelinuxagent.common.osutil import get_osutil
-from azurelinuxagent.common.utils import fileutil
+from azurelinuxagent.common.utils import fileutil, shellutil
+from azurelinuxagent.common.version import AGENT_NAME, AGENT_LONG_VERSION, \
+    DISTRO_NAME, DISTRO_VERSION, \
+    PY_VERSION_MAJOR, PY_VERSION_MINOR, \
+    PY_VERSION_MICRO, GOAL_STATE_AGENT_VERSION
 
 
 class Agent(object):
@@ -152,11 +155,90 @@ class Agent(object):
             print("{0} = {1}".format(k, configuration[k]))
 
 
+def check_venv_exists(venv_name):
+    return os.path.exists("/var/lib/waagent/{0}".format(venv_name))
+
+
+def download_and_setup_agent_py_interpreter(agent_py_path):
+    # py_38_download_link = "https://www.python.org/ftp/python/3.8.5/Python-3.8.5.tgz"
+    # Assuming the tar file is already present in the box
+    tar_file = os.path.join(agent_py_path, "Python-3.8.5.tgz")
+    if not os.path.exists(tar_file):
+        raise IOError("Tar file {0} not found".format(tar_file))
+
+    setup_py_file_name = "setup_python.sh"
+    copy(os.path.join(os.getcwd(), setup_py_file_name), agent_py_path)
+
+    with tarfile.open(tar_file) as tf:
+        tf.extractall(path=agent_py_path)
+
+    stdout = shellutil.run_command([agent_py_path, setup_py_file_name], log_error=True)
+    logger.info("Python setup output - {0}".format(stdout))
+
+
+def download_and_setup_venv(venv_path, agent_py_exe_path):
+    # File link - https://files.pythonhosted.org/packages/15/cd/9bbb31845faec1e3848edcc4645411952a9a2a91a21c5c0fb6b84d929c5f/virtualenv-20.0.28.tar.gz
+    # Assuming already there in the path
+    tar_file = os.path.join(venv_path, "virtualenv-20.0.28.tar.gz")
+    if not os.path.exists(tar_file):
+        raise IOError("Tar file {0} not found".format(tar_file))
+
+    with tarfile.open(tar_file) as tf:
+        tf.extractall(path=venv_path)
+
+    stdout = shellutil.run_command([agent_py_exe_path, glob.glob(os.path.join(venv_path, "*", "setup.py"))[0], "install"], log_error=True)
+    logger.info("Setting up virtualenv output - {0}".format(stdout))
+
+
+def try_setup_venv(venv_name):
+    agent_venv_path = "/var/lib/waagent/{0}".format(venv_name)
+    agent_py_path = "/var/lib/waagent/agent_python/python/"
+    installed_venv_path = "/var/lib/waagent/agent_python/virtualenv"
+    installed_venv_exe_path = os.path.join(installed_venv_path, "bin", "virtualenv")
+    agent_py_exe_path = os.path.join(agent_py_path, "bin", "python3.8")
+    # Check if agent interpreter exists
+    if not os.path.exists(agent_py_exe_path):
+        download_and_setup_agent_py_interpreter(agent_py_path)
+
+    # Check if virtualenv exists
+    if not os.path.exists(installed_venv_exe_path):
+        download_and_setup_venv(installed_venv_path, agent_py_exe_path)
+
+    # Finally create a new virtual environment with the agent interpreter and virtualenv
+    command = [installed_venv_exe_path, agent_venv_path, "--python", agent_py_exe_path]
+    stdout = shellutil.run_command(command, log_error=True)
+    logger.info("Creating venv = {0}".format(stdout))
+
+    # Activate the virtualenv for the daemon
+    activate_this = os.path.join(agent_venv_path, "bin", "activate_this.py")
+    with open(activate_this) as f:
+        code = compile(f.read(), activate_this, 'exec')
+        exec (code, dict(__file__=activate_this))
+
+    logger.info("Activated the virtual env for this process. Test python version: {0}".format(sys.version_info))
+
+
+def ensure_venv_setup(venv_name="waagent-venv"):
+    # Check if venv already exists in /var/lib/waagent/agent-venv. If not try setting it up.
+    # If anything fails, let it go and let it start normally
+    try:
+        if check_venv_exists(venv_name):
+            logger.info("{0} already exists! Not resetting it.".format(venv_name))
+            return
+        try_setup_venv(venv_name)
+    except Exception as e:
+        logger.error("Error when trying to setup {0}. Error: {1}".format(venv_name, e))
+        logger.warn("Using system python instead")
+
+
 def main(args=[]):
     """
     Parse command line arguments, exit with usage() on error.
     Invoke different methods according to different command
     """
+
+    # Before doing anything else, check to see if venv already setup or not. If not, then try setting it up.
+    ensure_venv_setup()
     if len(args) <= 0:
         args = sys.argv[1:]
     command, force, verbose, debug, conf_file_path = parse_args(args)
