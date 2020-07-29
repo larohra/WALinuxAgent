@@ -178,10 +178,8 @@ def download_and_setup_agent_py_interpreter(agent_py_path):
         with tarfile.open(tar_file) as tf:
             tf.extractall(path=agent_py_path)
 
-    rc, stdout = shellutil.run_get_output(os.path.join(py_dir, setup_py_file_name), chk_err=True)
-    logger.info("Python setup output RC: {0} - {1}".format(rc, stdout))
-    if rc != 0:
-        raise Exception("Python interpreter setup failed")
+    stdout = shellutil.run_command([os.path.join(py_dir, setup_py_file_name), py_dir], log_error=True)
+    logger.info("Python setup output - {0}".format(stdout))
 
 
 def download_and_setup_venv(venv_path, agent_py_exe_path):
