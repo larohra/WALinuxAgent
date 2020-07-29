@@ -162,29 +162,34 @@ def check_venv_exists(venv_name):
 def download_and_setup_agent_py_interpreter(agent_py_path):
     # py_38_download_link = "https://www.python.org/ftp/python/3.8.5/Python-3.8.5.tgz"
     # Assuming the tar file is already present in the box
-    tar_file = os.path.join(agent_py_path, "Python-3.8.5.tgz")
+    py_version = "Python-3.8.5"
+    py_dir = os.path.join(agent_py_path, py_version)
+    tar_file = os.path.join(agent_py_path, "{0}.tgz".format(py_version))
     if not os.path.exists(tar_file):
         raise IOError("Tar file {0} not found".format(tar_file))
 
     setup_py_file_name = "setup_python.sh"
-    copy(os.path.join(os.path.dirname(os.path.abspath(__file__)), setup_py_file_name), agent_py_path)
+    copy(os.path.join(os.path.dirname(os.path.abspath(__file__)), setup_py_file_name), py_dir)
 
-    with tarfile.open(tar_file) as tf:
-        tf.extractall(path=agent_py_path)
+    if not os.path.exists(py_dir):
+        with tarfile.open(tar_file) as tf:
+            tf.extractall(path=agent_py_path)
 
-    stdout = shellutil.run_command([agent_py_path, setup_py_file_name], log_error=True)
+    stdout = shellutil.run_command([py_dir, setup_py_file_name], log_error=True)
     logger.info("Python setup output - {0}".format(stdout))
 
 
 def download_and_setup_venv(venv_path, agent_py_exe_path):
     # File link - https://files.pythonhosted.org/packages/15/cd/9bbb31845faec1e3848edcc4645411952a9a2a91a21c5c0fb6b84d929c5f/virtualenv-20.0.28.tar.gz
     # Assuming already there in the path
-    tar_file = os.path.join(venv_path, "virtualenv-20.0.28.tar.gz")
+    venv_version = "virtualenv-20.0.28"
+    tar_file = os.path.join(venv_path, "{0}.tar.gz".format(venv_version))
     if not os.path.exists(tar_file):
         raise IOError("Tar file {0} not found".format(tar_file))
 
-    with tarfile.open(tar_file) as tf:
-        tf.extractall(path=venv_path)
+    if not os.path.exists(os.path.join(venv_path, venv_version)):
+        with tarfile.open(tar_file) as tf:
+            tf.extractall(path=venv_path)
 
     stdout = shellutil.run_command([agent_py_exe_path, glob.glob(os.path.join(venv_path, "*", "setup.py"))[0], "install"], log_error=True)
     logger.info("Setting up virtualenv output - {0}".format(stdout))
