@@ -178,7 +178,7 @@ def download_and_setup_agent_py_interpreter(agent_py_path):
         with tarfile.open(tar_file) as tf:
             tf.extractall(path=agent_py_path)
 
-    stdout = shellutil.run_command([py_dir, setup_py_file_name], log_error=True)
+    stdout = shellutil.run_command([os.path.join(py_dir, setup_py_file_name)], log_error=True)
     logger.info("Python setup output - {0}".format(stdout))
 
 
