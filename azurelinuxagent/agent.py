@@ -26,6 +26,7 @@ from __future__ import print_function
 import glob
 import os
 import re
+import stat
 import subprocess
 import sys
 import tarfile
@@ -170,6 +171,8 @@ def download_and_setup_agent_py_interpreter(agent_py_path):
 
     setup_py_file_name = "setup_python.sh"
     copy(os.path.join(os.path.dirname(os.path.abspath(__file__)), setup_py_file_name), py_dir)
+
+    os.chmod(os.path.join(py_dir, setup_py_file_name), stat.S_IXGRP)
 
     if not os.path.exists(py_dir):
         with tarfile.open(tar_file) as tf:
