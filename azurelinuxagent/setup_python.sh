@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-
-dir=$(pwd)
+set -e
+dir=$(dirname "$(pwd)")
 echo "Installing python to $dir"
-echo "cleaning make"
-make clean
+# echo "cleaning make"
+# make clean
 echo "configuring python"
-./configure --prefix="$dir"
+$pwd/configure --prefix="$dir"
 echo "create makefile"
 make
 echo "make install"
