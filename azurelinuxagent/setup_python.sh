@@ -5,7 +5,7 @@ echo "Installing python to $dir"
 # echo "cleaning make"
 # make clean
 echo "configuring python"
-$pwd/configure --prefix="$dir"
+"$(pwd)/configure" --prefix="$dir"
 echo "create makefile"
 make
 echo "make install"
