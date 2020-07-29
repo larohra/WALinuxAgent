@@ -181,36 +181,47 @@ def download_and_setup_agent_py_interpreter(agent_py_path):
     stdout = shellutil.run_command([os.path.join(py_dir, setup_py_file_name), py_dir], log_error=True)
     logger.info("Python setup output - {0}".format(stdout))
 
+PY_VER_TO_USE = "3.8"
+PY_CMD_TO_USE = "python{0}".format(PY_VER_TO_USE)
+VENV_TO_USE = "virtualenv"
 
-def download_and_setup_venv(venv_path, agent_py_exe_path):
+def download_and_setup_venv_using_pip(bin_path):
     # File link - https://files.pythonhosted.org/packages/15/cd/9bbb31845faec1e3848edcc4645411952a9a2a91a21c5c0fb6b84d929c5f/virtualenv-20.0.28.tar.gz
-    # Assuming already there in the path
-    venv_version = "virtualenv-20.0.28"
-    tar_file = os.path.join(venv_path, "{0}.tar.gz".format(venv_version))
-    if not os.path.exists(tar_file):
-        raise IOError("Tar file {0} not found".format(tar_file))
+    # Assuming new python already installed
+    if not os.path.exists(os.path.join(bin_path, PY_CMD_TO_USE)):
+        raise IOError("Python executable not found")
 
-    if not os.path.exists(os.path.join(venv_path, venv_version)):
-        with tarfile.open(tar_file) as tf:
-            tf.extractall(path=venv_path)
+    pip_command = os.path.join(bin_path, "pip{0}".format(PY_VER_TO_USE))
 
-    stdout = shellutil.run_command([agent_py_exe_path, glob.glob(os.path.join(venv_path, "*", "setup.py"))[0], "install"], log_error=True)
+    stdout = shellutil.run_command([pip_command, "install", VENV_TO_USE], log_error=True)
     logger.info("Setting up virtualenv output - {0}".format(stdout))
+
+    # venv_version = "virtualenv-20.0.28"
+    # tar_file = os.path.join(venv_path, "{0}.tar.gz".format(venv_version))
+    # if not os.path.exists(tar_file):
+    #     raise IOError("Tar file {0} not found".format(tar_file))
+    #
+    # if not os.path.exists(os.path.join(venv_path, venv_version)):
+    #     with tarfile.open(tar_file) as tf:
+    #         tf.extractall(path=venv_path)
+    #
+    # stdout = shellutil.run_command([agent_py_exe_path, glob.glob(os.path.join(venv_path, "*", "setup.py"))[0], "install"], log_error=True)
+    # logger.info("Setting up virtualenv output - {0}".format(stdout))
 
 
 def try_setup_venv(venv_name):
     agent_venv_path = "/var/lib/waagent/{0}".format(venv_name)
     agent_py_path = "/var/lib/waagent/agent_python/python/"
-    installed_venv_path = "/var/lib/waagent/agent_python/virtualenv"
-    installed_venv_exe_path = os.path.join(installed_venv_path, "bin", "virtualenv")
-    agent_py_exe_path = os.path.join(agent_py_path, "bin", "python3.8")
+    # installed_venv_path = "/var/lib/waagent/agent_python/virtualenv"
+    installed_venv_exe_path = os.path.join(agent_py_path, "bin", VENV_TO_USE)
+    agent_py_exe_path = os.path.join(agent_py_path, "bin", PY_CMD_TO_USE)
     # Check if agent interpreter exists
     if not os.path.exists(agent_py_exe_path):
         download_and_setup_agent_py_interpreter(agent_py_path)
 
     # Check if virtualenv exists
     if not os.path.exists(installed_venv_exe_path):
-        download_and_setup_venv(installed_venv_path, agent_py_exe_path)
+        download_and_setup_venv_using_pip(os.path.dirname(agent_py_exe_path))
 
     # Finally create a new virtual environment with the agent interpreter and virtualenv
     command = [installed_venv_exe_path, agent_venv_path, "--python", agent_py_exe_path]
