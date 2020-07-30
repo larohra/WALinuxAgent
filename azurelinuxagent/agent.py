@@ -196,18 +196,6 @@ def download_and_setup_venv_using_pip(bin_path):
     stdout = shellutil.run_command([pip_command, "install", VENV_TO_USE], log_error=True)
     logger.info("Setting up virtualenv output - {0}".format(stdout))
 
-    # venv_version = "virtualenv-20.0.28"
-    # tar_file = os.path.join(venv_path, "{0}.tar.gz".format(venv_version))
-    # if not os.path.exists(tar_file):
-    #     raise IOError("Tar file {0} not found".format(tar_file))
-    #
-    # if not os.path.exists(os.path.join(venv_path, venv_version)):
-    #     with tarfile.open(tar_file) as tf:
-    #         tf.extractall(path=venv_path)
-    #
-    # stdout = shellutil.run_command([agent_py_exe_path, glob.glob(os.path.join(venv_path, "*", "setup.py"))[0], "install"], log_error=True)
-    # logger.info("Setting up virtualenv output - {0}".format(stdout))
-
 
 def try_setup_venv(venv_name):
     agent_venv_path = "/var/lib/waagent/{0}".format(venv_name)
