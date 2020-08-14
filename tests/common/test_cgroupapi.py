@@ -686,9 +686,9 @@ class SystemdCgroupsApiTestCase(AgentTestCase):
 
                     self.assertEquals(2, len(extension_calls), "The extension should have been invoked exactly twice")
                     self.assertIn("systemd-run --unit=Microsoft.Compute.TestExtension_1.2.3", extension_calls[0],
-                                  "The first call to the extension should have used systemd")
+                        "The first call to the extension should have used systemd")
                     self.assertEquals(command, extension_calls[1],
-                                      "The second call to the extension should not have used systemd")
+                        "The second call to the extension should not have used systemd")
 
                     self.assertEquals(len(CGroupsTelemetry._tracked), 0, "No cgroups should have been created")
 
