@@ -549,8 +549,8 @@ class WireClient(object): # pylint: disable=R0904
             raise
 
         except Exception as e: # pylint: disable=C0103
-            raise ProtocolError("[Wireserver Exception] {0}".format(
-                ustr(e)))
+            raise ProtocolError(
+                "[Wireserver Exception] {0}.\nStack: {1}".format(ustr(e), ustr(traceback.format_exc())))
 
         return resp
 
