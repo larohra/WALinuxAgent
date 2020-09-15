@@ -348,6 +348,14 @@ def http_request(method, # pylint: disable=R0913,R0912,R0914,W0102
 
     global SECURE_WARNING_EMITTED # pylint: disable=W0603
 
+    try:
+        logger.info("Requested URL: {0}, isNone: {1}, decoded: {2}".format(url, url is None, url.decode('utf-8')))
+        isinstance(url, bytes)
+    except Exception as e:
+        logger.error("Some error: {0} for URL: {1}".format(ustr(e), url))
+        logger.error("isNone: {0}".format(url is None))
+        logger.error("decoded: {0}".format(url.decode('utf-8')))
+
     host, port, secure, rel_uri = _parse_url(url)
 
     # Use the HTTP(S) proxy
