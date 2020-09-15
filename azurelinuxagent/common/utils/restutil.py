@@ -276,6 +276,12 @@ def _get_http_proxy(secure=False):
 
 
 def redact_sas_tokens_in_urls(url):
+    try:
+        logger.info("URI: {0}".format(url))
+    except Exception as e:
+        logger.error("Random error: {0}".format(ustr(e)))
+        logger.info("trying to decode to see if that works: {0}".format(url.decode('utf-8')))
+
     return SAS_TOKEN_RETRIEVAL_REGEX.sub(r"\1" + REDACTED_TEXT + r"\3", url)
 
 
