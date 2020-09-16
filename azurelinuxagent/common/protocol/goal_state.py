@@ -20,6 +20,8 @@ import json
 import os
 import re
 
+import traceback
+
 import azurelinuxagent.common.conf as conf
 import azurelinuxagent.common.logger as logger
 from azurelinuxagent.common.AgentGlobals import AgentGlobals
@@ -128,7 +130,7 @@ class GoalState(object): # pylint: disable=R0902
                 xml_text = wire_client.fetch_config(uri, wire_client.get_header_for_cert())
                 self.remote_access = RemoteAccess(xml_text)
         except Exception as e: # pylint: disable=C0103
-            logger.warn("Fetching the goal state failed: {0}", ustr(e))
+            logger.warn("Fetching the goal state failed: {0}, stack: {1}", ustr(e), traceback.format_exc())
             try:
                 fileutil.mkdir(os.path.join(conf.get_lib_dir(), "debug_error"), mode=0o700)
                 fileutil.write_file(
