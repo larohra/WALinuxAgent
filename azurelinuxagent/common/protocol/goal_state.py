@@ -95,10 +95,12 @@ class GoalState(object): # pylint: disable=R0902
 
         try:
             uri = findtext(xml_doc, "HostingEnvironmentConfig")
+            logger.verbose("Fetching HostingEnvironmentConfig")
             xml_text = wire_client.fetch_config(uri, wire_client.get_header())
             self.hosting_env = HostingEnv(xml_text)
 
             uri = findtext(xml_doc, "SharedConfig")
+            logger.verbose("Fetching SharedConfig")
             xml_text = wire_client.fetch_config(uri, wire_client.get_header())
             self.shared_conf = SharedConfig(xml_text)
 
@@ -106,6 +108,7 @@ class GoalState(object): # pylint: disable=R0902
             if uri is None:
                 self.certs = None
             else:
+                logger.verbose("Fetching Certificates")
                 xml_text = wire_client.fetch_config(uri, wire_client.get_header_for_cert())
                 self.certs = Certificates(xml_text)
 
@@ -113,6 +116,7 @@ class GoalState(object): # pylint: disable=R0902
             if uri is None:
                 self.ext_conf = ExtensionsConfig(None)
             else:
+                logger.verbose("Fetching ExtensionConfig")
                 xml_text = wire_client.fetch_config(uri, wire_client.get_header())
                 self.ext_conf = ExtensionsConfig(xml_text)
 
@@ -120,10 +124,18 @@ class GoalState(object): # pylint: disable=R0902
             if uri is None:
                 self.remote_access = None
             else:
+                logger.verbose("Fetching RemoteAccessInfo")
                 xml_text = wire_client.fetch_config(uri, wire_client.get_header_for_cert())
                 self.remote_access = RemoteAccess(xml_text)
         except Exception as e: # pylint: disable=C0103
             logger.warn("Fetching the goal state failed: {0}", ustr(e))
+            try:
+                fileutil.mkdir(os.path.join(conf.get_lib_dir(), "debug_error"), mode=0o700)
+                fileutil.write_file(
+                    os.path.join(conf.get_lib_dir(), "debug_error", "GoalState.{0}.xml".format(self.incarnation)),
+                    self.xml_text)
+            except Exception as e:
+                logger.error("Error when saving debug logs: {0}".format(ustr(e)))
             raise
         finally:
             logger.info('Fetch goal state completed')

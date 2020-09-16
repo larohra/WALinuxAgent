@@ -304,13 +304,11 @@ def _http_request(method, host, rel_uri, port=None, data=None, secure=False, # p
     try:
         logger.info("URI: {0}; ConnHost: {1}; ConnPort: {2}".format(url, conn_host, conn_port))
     except Exception as e:
-        logger.error("Random error: {0}".format(ustr(e)))
-        logger.info(
-            "trying to decode to see if that works: URI: {0}; ConnHost: {1}; ConnPort: {2}".format(url.decode('utf-8'),
-                                                                                                   conn_host.decode(
-                                                                                                       'utf-8'),
-                                                                                                   conn_port.decode(
-                                                                                                       'utf-8')))
+        logger.error("Random error: {0}".format(traceback.format_exc()))
+        logger.error(
+            "Errors URI: {0}; ConnHost: {1}; ConnPort: {2}".format(url,
+                                                                                                   conn_host,
+                                                                                                   conn_port))
 
     if secure:
         conn = httpclient.HTTPSConnection(conn_host,
@@ -349,12 +347,12 @@ def http_request(method, # pylint: disable=R0913,R0912,R0914,W0102
     global SECURE_WARNING_EMITTED # pylint: disable=W0603
 
     try:
-        logger.info("Requested URL: {0}, isNone: {1}, decoded: {2}".format(url, url is None, url.decode('utf-8')))
-        isinstance(url, bytes)
+        logger.info("Requested URL: {0}".format(url))
+        logger.info("isNone: {0}".format(url is None))
     except Exception as e:
-        logger.error("Some error: {0} for URL: {1}".format(ustr(e), url))
+        logger.error("Some error: : {0}".format(traceback.format_exc()))
+        logger.error("Url: {0}".format(url))
         logger.error("isNone: {0}".format(url is None))
-        logger.error("decoded: {0}".format(url.decode('utf-8')))
 
     host, port, secure, rel_uri = _parse_url(url)
 
