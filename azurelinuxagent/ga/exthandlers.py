@@ -347,6 +347,10 @@ class ExtHandlersHandler(object):
         return all(feature.name in supported_features for feature in required_features)
 
     def __process_and_handle_extensions(self, etag):
+        self.__gs_aggregate_status = GoalStateAggregateStatus(status=GoalStateState.Failed, seq_no=etag,
+                                                              code=GoalStateAggregateStatusCodes.GoalStateUnsupportedRequiredFeatures,
+                                                              message="Unsupported required features")
+        return
         try:
             # Verify we satisfy all required features, if any. If not, report failure here itself, no need to process anything further.
             if not self.__all_required_features_supported():
