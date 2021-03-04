@@ -355,13 +355,13 @@ class ExtHandlersHandler(object):
                                                                       message="Unsupported required features")
             else:
                 self.handle_ext_handlers(etag)
-                self.__gs_aggregate_status = GoalStateAggregateStatus(status=GoalStateState.Success, seq_no=etag,
-                                                                      code=GoalStateAggregateStatusCodes.Success,
+                self.__gs_aggregate_status = GoalStateAggregateStatus(status=GoalStateState.Failed, seq_no=etag,
+                                                                      code=GoalStateAggregateStatusCodes.GoalStateUnsupportedRequiredFeatures,
                                                                       message="GoalState executed successfully")
         except Exception as error:
             msg = "Unexpected error when processing goal state: {0}; {1}".format(ustr(error), traceback.format_exc())
             self.__gs_aggregate_status = GoalStateAggregateStatus(status=GoalStateState.Failed, seq_no=etag,
-                                                                  code=GoalStateAggregateStatusCodes.GoalStateUnknownFailure,
+                                                                  code=GoalStateAggregateStatusCodes.GoalStateUnsupportedRequiredFeatures,
                                                                   message=msg)
             logger.warn(msg)
             add_event(AGENT_NAME,
