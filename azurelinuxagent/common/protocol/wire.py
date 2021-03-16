@@ -23,7 +23,7 @@ import time
 import traceback
 import xml.sax.saxutils as saxutils
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import azurelinuxagent.common.conf as conf
 import azurelinuxagent.common.logger as logger
@@ -587,7 +587,6 @@ class WireClient(object):
         self._host_plugin = None
         self.status_blob = StatusBlob(self)
         self.goal_state_flusher = StateFlusher(conf.get_lib_dir())
-        self._last_saved = (None, 10)
 
     def get_endpoint(self):
         return self._endpoint
@@ -658,12 +657,20 @@ class WireClient(object):
         response = self.fetch(uri, headers, use_proxy=False)
         return response
 
-    def fetch_manifest(self, version_uris):
+    def fetch_manifest(self, version_uris, timeout_in_minutes=5, timeout_in_ms=0):
         logger.verbose("Fetch manifest")
         version_uris_shuffled = version_uris
         random.shuffle(version_uris_shuffled)
 
+        uris_tried = 0
+        start_time = datetime.now()
         for version in version_uris_shuffled:
+
+            if datetime.now() - start_time > timedelta(minutes=timeout_in_minutes, milliseconds=timeout_in_ms):
+                logger.warn("Agent timed-out after {0} minutes while fetching extension manifests. {1}/{2} uris tried.",
+                    timeout_in_minutes, uris_tried, len(version_uris))
+                break
+
             # GA expects a location and failoverLocation in ExtensionsConfig, but
             # this is not always the case. See #1147.
             if version.uri is None:
@@ -683,6 +690,8 @@ class WireClient(object):
                     return manifest
             except Exception as error:
                 logger.warn("Failed to fetch manifest from {0}. Error: {1}", version.uri, ustr(error))
+
+            uris_tried += 1
 
         raise ExtensionDownloadError("Failed to fetch manifest from all sources")
 
@@ -1024,22 +1033,6 @@ class WireClient(object):
             add_event(AGENT_NAME, op=WALAEventOperation.DefaultChannelChange, version=CURRENT_VERSION, is_success=True, message=message, log_event=False)
         return ret
 
-    def write_to_file(self):
-        # Write for the same incarnation only 20 times
-        incarnation = self.get_goal_state().incarnation
-        last_inc, retry = self._last_saved
-        if last_inc is None or last_inc != incarnation:
-            self._last_saved = (incarnation, 10)
-        elif last_inc == incarnation and retry > 0:
-            self._last_saved = (incarnation, retry-1)
-        else:
-            # Done with writing the status files, dont do anything now
-            return
-
-        status_path = os.path.join(conf.get_lib_dir(),
-                                   "{0}_{1}_{2}.json".format("status", incarnation, datetime.utcnow().isoformat()))
-        fileutil.write_file(status_path, self.status_blob.data)
-
     def upload_status_blob(self):
         ext_conf = self.get_ext_conf()
 
@@ -1058,10 +1051,8 @@ class WireClient(object):
 
         try:
             self.status_blob.prepare(blob_type)
-            self.write_to_file()
-
         except Exception as e:
-            raise ProtocolError("Exception creating status blob: {0}", ustr(e))  # pylint: disable=W0715
+            raise ProtocolError("Exception creating status blob: {0}".format(ustr(e)))
 
         # Swap the order of use for the HostPlugin vs. the "direct" route.
         # Prefer the use of HostPlugin. If HostPlugin fails fall back to the

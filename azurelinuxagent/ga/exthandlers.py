@@ -243,7 +243,7 @@ class ExtensionRequestedState(object):
     Uninstall = u"uninstall"
 
 
-class GoalStateState(object):
+class GoalStateStatus(object):
     """
     This is an Enum to define the State of the GoalState as a whole. This is reported as part of the
     'vmArtifactsAggregateStatus.goalStateAggregateStatus' in the status blob.
@@ -251,9 +251,12 @@ class GoalStateState(object):
     """
     Success = "Success"
     Failed = "Failed"
+
+    # This is used when we initialize a new Goal State, before we start processing it.
+    # It doesn't hold much value for us until we move status reporting to a separate thread.
     Initialize = "Initialize"
 
-    # The following field is not used now but would be needed once Status reporting is moved to a separate thread
+    # The following field is not used now but would be needed once Status reporting is moved to a separate thread.
     Transitioning = "Transitioning"
 
 
@@ -283,7 +286,7 @@ class ExtHandlersHandler(object):
         # extensions on incarnation change, we need to maintain its state.
         # Setting the status as Initialize here. This would be overridden as soon as the first GoalState is processed
         # (once self._extension_processing_allowed() is True).
-        self.__gs_aggregate_status = GoalStateAggregateStatus(status=GoalStateState.Initialize, seq_no="-1",
+        self.__gs_aggregate_status = GoalStateAggregateStatus(status=GoalStateStatus.Initialize, seq_no="-1",
                                                               code=GoalStateAggregateStatusCodes.Success,
                                                               message="Initializing new GoalState")
 
@@ -292,6 +295,11 @@ class ExtHandlersHandler(object):
     def _incarnation_changed(self, etag):
         # Skip processing if GoalState incarnation did not change
         return self.last_etag != etag
+
+    def __last_gs_unsupported(self):
+        # Return if the last GoalState was unsupported
+        return self.__gs_aggregate_status.status == GoalStateStatus.Failed and \
+               self.__gs_aggregate_status.code == GoalStateAggregateStatusCodes.GoalStateUnsupportedRequiredFeatures
 
     def get_goal_state_debug_metadata(self):
         """
@@ -341,36 +349,38 @@ class ExtHandlersHandler(object):
                       message=detailed_msg)
             return
 
-    def __all_required_features_supported(self):
+    def __get_unsupported_features(self):
         required_features = self.protocol.get_required_features()
         supported_features = get_agent_supported_features_list_for_crp()
-        return all(feature.name in supported_features for feature in required_features)
+        return [feature.name for feature in required_features if feature.name not in supported_features]
 
     def __process_and_handle_extensions(self, etag):
-        self.__gs_aggregate_status = GoalStateAggregateStatus(status=GoalStateState.Failed, seq_no=etag,
-                                                              code=GoalStateAggregateStatusCodes.GoalStateUnsupportedRequiredFeatures,
-                                                              message="Unsupported required features")
-        return
         try:
             # Verify we satisfy all required features, if any. If not, report failure here itself, no need to process anything further.
-            if not self.__all_required_features_supported():
-                self.__gs_aggregate_status = GoalStateAggregateStatus(status=GoalStateState.Failed, seq_no=etag,
+            unsupported_features = self.__get_unsupported_features()
+            if any(unsupported_features):
+                msg = "Failing GS incarnation: {0} as Unsupported features found: {1}".format(etag, ', '.join(
+                    unsupported_features))
+                logger.warn(msg)
+                self.__gs_aggregate_status = GoalStateAggregateStatus(status=GoalStateStatus.Failed, seq_no=etag,
                                                                       code=GoalStateAggregateStatusCodes.GoalStateUnsupportedRequiredFeatures,
-                                                                      message="Unsupported required features")
+                                                                      message=msg)
+                add_event(op=WALAEventOperation.GoalStateUnsupportedFeatures,
+                          is_success=False,
+                          message=msg,
+                          log_event=False)
             else:
                 self.handle_ext_handlers(etag)
-                self.__gs_aggregate_status = GoalStateAggregateStatus(status=GoalStateState.Failed, seq_no=etag,
-                                                                      code=GoalStateAggregateStatusCodes.GoalStateUnsupportedRequiredFeatures,
+                self.__gs_aggregate_status = GoalStateAggregateStatus(status=GoalStateStatus.Success, seq_no=etag,
+                                                                      code=GoalStateAggregateStatusCodes.Success,
                                                                       message="GoalState executed successfully")
         except Exception as error:
             msg = "Unexpected error when processing goal state: {0}; {1}".format(ustr(error), traceback.format_exc())
-            self.__gs_aggregate_status = GoalStateAggregateStatus(status=GoalStateState.Failed, seq_no=etag,
-                                                                  code=GoalStateAggregateStatusCodes.GoalStateUnsupportedRequiredFeatures,
+            self.__gs_aggregate_status = GoalStateAggregateStatus(status=GoalStateStatus.Failed, seq_no=etag,
+                                                                  code=GoalStateAggregateStatusCodes.GoalStateUnknownFailure,
                                                                   message=msg)
             logger.warn(msg)
-            add_event(AGENT_NAME,
-                      version=CURRENT_VERSION,
-                      op=WALAEventOperation.ExtensionProcessing,
+            add_event(op=WALAEventOperation.ExtensionProcessing,
                       is_success=False,
                       message=msg,
                       log_event=False)
@@ -391,6 +401,10 @@ class ExtHandlersHandler(object):
         return ExtHandlerInstance(eh, protocol)
 
     def _cleanup_outdated_handlers(self):
+        # Skip cleanup if the previous GS was Unsupported
+        if self.__last_gs_unsupported():
+            return
+
         handlers = []
         pkgs = []
         ext_handlers_in_gs = [ext_handler.name for ext_handler in self.ext_handlers.extHandlers]
@@ -719,17 +733,30 @@ class ExtHandlersHandler(object):
         """
         vm_status = VMStatus(status="Ready", message="Guest Agent is running",
                              gs_aggregate_status=self.__gs_aggregate_status)
-        if self.ext_handlers is not None:
-            for ext_handler in self.ext_handlers.extHandlers:
+
+        handlers_to_report = []
+
+        # Incase of Unsupported error, report the status of the handlers in the VM
+        if self.__last_gs_unsupported():
+            for item, path in list_agent_lib_directory(skip_agent_package=True):
                 try:
-                    self.report_ext_handler_status(vm_status, ext_handler)
-                except ExtensionError as error:
-                    add_event(
-                        AGENT_NAME,
-                        version=CURRENT_VERSION,
-                        op=WALAEventOperation.ExtensionProcessing,
-                        is_success=False,
-                        message=ustr(error))
+                    handler_instance = ExtHandlersHandler.get_ext_handler_instance_from_path(name=item,
+                                                                                             path=path,
+                                                                                             protocol=self.protocol)
+                    if handler_instance is not None:
+                        handlers_to_report.append(handler_instance.ext_handler)
+                except Exception:
+                    continue
+
+        # If GoalState supported, report the status of extension handlers that were requested by the GoalState
+        elif not self.__last_gs_unsupported() and self.ext_handlers is not None:
+            handlers_to_report = self.ext_handlers.extHandlers
+
+        for ext_handler in handlers_to_report:
+            try:
+                self.report_ext_handler_status(vm_status, ext_handler)
+            except ExtensionError as error:
+                add_event(op=WALAEventOperation.ExtensionProcessing, is_success=False, message=ustr(error))
 
         logger.verbose("Report vm agent status")
         try:
