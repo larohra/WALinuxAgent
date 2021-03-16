@@ -358,6 +358,7 @@ class ExtHandlersHandler(object):
         try:
             # Verify we satisfy all required features, if any. If not, report failure here itself, no need to process anything further.
             unsupported_features = self.__get_unsupported_features()
+            unsupported_features.append("FailThisGSForTestingFeature")
             if any(unsupported_features):
                 msg = "Failing GS incarnation: {0} as Unsupported features found: {1}".format(etag, ', '.join(
                     unsupported_features))
