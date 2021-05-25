@@ -198,7 +198,7 @@ AGENT_NAME = "WALinuxAgent"
 AGENT_LONG_NAME = "Azure Linux Agent"
 # Setting the version to 9.9.9.9 for testing purposes.
 # Replace this with the actual agent version on release.
-# Current Agent Version = 2.2.54.2
+# Current Agent Version = 2.3.0.2
 AGENT_VERSION = '9.9.9.9'
 AGENT_LONG_VERSION = "{0}-{1}".format(AGENT_NAME, AGENT_VERSION)
 AGENT_DESCRIPTION = """
