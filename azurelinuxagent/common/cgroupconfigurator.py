@@ -300,8 +300,8 @@ class CGroupConfigurator(object):
             # if fileutil.findre_in_file(agent_unit_file, r"CPUAccounting=") is not None:
             #     CGroupConfigurator._Impl.__cleanup_unit_file(agent_drop_in_file_cpu_accounting)
             # else:
-            if not os.path.exists(agent_drop_in_file_cpu_accounting):
-                files_to_create.append((agent_drop_in_file_cpu_accounting, _AGENT_DROP_IN_FILE_CPU_ACCOUNTING_CONTENTS))
+            #     if not os.path.exists(agent_drop_in_file_cpu_accounting):
+            files_to_create.append((agent_drop_in_file_cpu_accounting, _AGENT_DROP_IN_FILE_CPU_ACCOUNTING_CONTENTS))
 
             if len(files_to_create) > 0:
                 # create the unit files, but if 1 fails remove all and return
