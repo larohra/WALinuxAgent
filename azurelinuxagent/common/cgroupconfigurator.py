@@ -61,6 +61,7 @@ _AGENT_DROP_IN_FILE_CPU_ACCOUNTING_CONTENTS = """
 # Do not edit.
 [Service]
 CPUAccounting=yes
+MemoryAccounting=yes
 """
 _AGENT_DROP_IN_FILE_CPU_QUOTA = "12-CPUQuota.conf"
 _AGENT_DROP_IN_FILE_CPU_QUOTA_CONTENTS_FORMAT = """
