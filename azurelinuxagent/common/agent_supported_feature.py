@@ -63,7 +63,7 @@ class _ETPFeature(AgentSupportedFeature):
 
     __NAME = SupportedFeatureNames.ExtensionTelemetryPipeline
     __VERSION = "1.0"
-    __SUPPORTED = True
+    __SUPPORTED = False
 
     def __init__(self):
         super(_ETPFeature, self).__init__(name=self.__NAME,
