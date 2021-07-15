@@ -413,7 +413,7 @@ class CGroupConfigurator(object):
             """
             quota_percentage = "{0}%".format(quota)
             _log_cgroup_info("Ensuring the agent's CPUQuota is {0}", quota_percentage)
-            if CGroupConfigurator._Impl.__try_set_cpu_quota(quota_percentage):
+            if CGroupConfigurator._Impl.__try_set_cpu_quota(''):
                 CGroupsTelemetry.set_track_throttled_time(True)
 
         @staticmethod
