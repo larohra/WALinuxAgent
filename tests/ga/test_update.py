@@ -352,7 +352,7 @@ class UpdateTestCase(AgentTestCase):
             shutil.copytree(from_path, to_path)
             self.rename_agent_bin(to_path, dst_v)
             if not is_available:
-                GuestAgent(to_path).mark_failure(is_fatal=True, process_agent_update_signal_file=True)
+                GuestAgent(to_path).mark_failure(is_fatal=True, is_agent_updating=True)
         return dst_v
 
 
@@ -790,7 +790,7 @@ class TestGuestAgent(UpdateTestCase):
         agent.clear_error()
         upgrade_time = datetime.utcfromtimestamp(time.time()).strftime(Logger.LogTimeFormatInUTC)
         fileutil.write_file(get_agent_global_update_signal_file(), upgrade_time)
-        agent.mark_failure(is_fatal=True, process_agent_update_signal_file=True)
+        agent.mark_failure(is_fatal=True, is_agent_updating=True)
         self.assertTrue(agent.is_blacklisted)
 
         pkg = ExtHandlerPackage(version=str(self._get_agent_version()))
@@ -1006,7 +1006,7 @@ class TestUpdate(UpdateTestCase):
         blacklisted_agents = self.update_handler.agents[1::2]
         self.update_handler._set_agent_update_signal_file()
         for agent in blacklisted_agents:
-            agent.mark_failure(is_fatal=True, process_agent_update_signal_file=self.update_handler.process_agent_update_signal_file)
+            agent.mark_failure(is_fatal=True, is_agent_updating=self.update_handler.is_agent_updating)
         self.update_handler._filter_blacklisted_agents()
         self.assertEqual(kept_agents, self.update_handler.agents)
 
@@ -1132,7 +1132,7 @@ class TestUpdate(UpdateTestCase):
 
         self.update_handler._set_agent_update_signal_file()
         self.update_handler.agents[0].mark_failure(is_fatal=True,
-                                                   process_agent_update_signal_file=self.update_handler.process_agent_update_signal_file)
+                                                   is_agent_updating=self.update_handler.is_agent_updating)
         self.assertFalse(self.update_handler._is_version_eligible(self.agents()[0].version))
 
     @patch("azurelinuxagent.ga.update.is_current_agent_installed", return_value=True)
@@ -1957,7 +1957,7 @@ class TestUpdate(UpdateTestCase):
                 # Create the update signal file to mimic the scenario of agent update
                 mock_remove.signal_file_creation_time = time.time()
                 update_handler._set_agent_update_signal_file()
-                self.assertTrue(update_handler.process_agent_update_signal_file,
+                self.assertTrue(update_handler.is_agent_updating,
                                 "We should be allowed to process update signal file")
                 update_handler.run(debug=True)
 
@@ -2028,7 +2028,7 @@ class TestUpdate(UpdateTestCase):
                 try:
                     self.assertTrue(os.path.exists(get_agent_global_update_signal_file()), "Global signal file should exist")
                     self.assertEqual(5, protocol.delete_count, "We should only try deleting a max of 5 times")
-                    self.assertFalse(update_handler.process_agent_update_signal_file,
+                    self.assertFalse(update_handler.is_agent_updating,
                                      "We should not be allowed to process update signal file")
                 except AssertionError:
                     print("Info calls: {0}".format(mock_info.call_args_list))
@@ -2062,7 +2062,7 @@ class TestUpdate(UpdateTestCase):
                     self.assertEqual(4, protocol.delete_count, "We should only try deleting 4 times")
                     self.assertFalse(os.path.exists(get_agent_global_update_signal_file()),
                                      "Global signal file should not exist")
-                    self.assertFalse(update_handler.process_agent_update_signal_file,
+                    self.assertFalse(update_handler.is_agent_updating,
                                      "We should not be allowed to process update signal file since we were able to delete signal file")
                     self.__ensure_it_can_not_blacklist_if_not_permitted(update_handler)
                     self.assertEqual(10, update_handler.get_iterations(), "Update handler should've run 10 times")
@@ -2077,7 +2077,7 @@ class TestUpdate(UpdateTestCase):
                                  "We should only try deleting max 10 times (since the count got reset after the last success)")
                 self.assertTrue(os.path.exists(get_agent_global_update_signal_file()),
                                 "Global signal file should exist")
-                self.assertFalse(update_handler.process_agent_update_signal_file,
+                self.assertFalse(update_handler.is_agent_updating,
                                  "We should not be allowed to process update signal file since retry count >= 5")
                 self.assertEqual(10, update_handler.get_iterations(), "Update handler should've run 10 times")
                 self.__ensure_it_can_not_blacklist_if_not_permitted(update_handler)
