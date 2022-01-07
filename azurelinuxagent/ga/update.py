@@ -300,9 +300,9 @@ class UpdateHandler(object):
                     agent_cmd,
                     ret)
                 logger.warn(msg)
-                if latest_agent is not None:
-                    latest_agent.mark_failure(is_fatal=True,
-                                              is_agent_updating=self.is_agent_updating)
+                # if latest_agent is not None:
+                #     latest_agent.mark_failure(is_fatal=True,
+                #                               is_agent_updating=self.is_agent_updating)
 
         except Exception as e:
             # Ignore child errors during termination
@@ -1354,6 +1354,7 @@ class GuestAgent(object):
 
     @property
     def is_error_blacklisted(self):
+        # does error.json contain errors or blacklisted
         # Return True is the GuestAgentError is blacklisted else False
         return self.error is not None and self.error.is_blacklisted
 
